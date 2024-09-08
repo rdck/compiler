@@ -1,2 +1,9 @@
 (library
- (name compiler))
+ (name compiler)
+ (libraries core)
+ (preprocess (pps ppx_deriving.show ppx_compare ppx_let)))
+
+(env
+ (dev
+  (flags
+   (:standard -w -unused-open))))

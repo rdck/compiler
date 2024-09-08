@@ -1,2 +1,5 @@
 _build
 *.opam
+*.cmi
+*.cmx
+*.o

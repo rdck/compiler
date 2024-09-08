@@ -19,6 +19,6 @@
  (name compiler)
  (synopsis "recurse center compiler")
  (description "")
- (depends ocaml dune)
+ (depends ocaml dune core)
  (tags
   (compiler "programming language")))
