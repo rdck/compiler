@@ -64,61 +64,40 @@ type expression =
   | Abs of ty binding * expression
 [@@deriving equal]
 
-type associativity =
-  | Left
-  | Right
+module Expression = struct
 
-type precedence = int
+  open PrettyPrinter
 
-type operation =
-  | Nullary
-  | Unary   of precedence * expression
-  | Binary  of precedence * associativity * expression * expression
+  type t = expression
 
-let structure : expression -> operation = function
-  | Lit _ -> Nullary
-  | Bin (op, lhs, rhs) ->
-      begin match op with
-      | Add -> Binary (2, Left , lhs, rhs)
-      | Sub -> Binary (2, Left , lhs, rhs)
-      | Mul -> Binary (3, Left , lhs, rhs)
-      | Exp -> Binary (4, Right, lhs, rhs)
-      end
-  | Var _ -> Nullary
-  | App (f, x) -> Binary (5, Left, f, x)
-  | Abs (_, body) -> Unary (1, body)
+  let structure = function
+    | Lit _ -> Nullary
+    | Bin (op, lhs, rhs) ->
+        begin match op with
+        | Add -> Binary (2, Left , lhs, rhs)
+        | Sub -> Binary (2, Left , lhs, rhs)
+        | Mul -> Binary (3, Left , lhs, rhs)
+        | Exp -> Binary (4, Right, lhs, rhs)
+        end
+    | Var _ -> Nullary
+    | App (f, x) -> Binary (5, Left, f, x)
+    | Abs (_, body) -> Unary (1, body)
+  
+  let node_text = function
+    | Lit i -> print "%d" i
+    | Bin (Add, _, _) -> " + "
+    | Bin (Sub, _, _) -> " - "
+    | Bin (Mul, _, _) -> " * "
+    | Bin (Exp, _, _) -> " ^ "
+    | Var id -> id
+    | App _ -> " "
+    | Abs ({ name ; value = domain }, _) ->
+        print "λ %s : %s . " name (show_ty domain)
 
-let node_text : expression -> string = function
-  | Lit i -> print "%d" i
-  | Bin (Add, _, _) -> " + "
-  | Bin (Sub, _, _) -> " - "
-  | Bin (Mul, _, _) -> " * "
-  | Bin (Exp, _, _) -> " ^ "
-  | Var id -> id
-  | App _ -> " "
-  | Abs ({ name ; value = domain }, _) ->
-      print "λ %s : %s . " name (show_ty domain)
+end
 
-let show_expression : expression -> string =
+module Printer = PrettyPrinter.Make(Expression)
 
-  (* wrap a string in parentheses when a condition is met *)
-  let wrap (s : string) (condition : bool) =
-    if condition then print "(%s)" s else s in
-
-  let rec show (p : precedence) (expr : expression) =
-    let atom = node_text expr in
-    match structure expr with
-    | Nullary -> atom
-    | Unary (p', e) ->
-        let s = print "%s%s" atom (show (p' - 1) e) in
-        wrap s (p' <= p)
-    | Binary (p', assoc, lhs, rhs) ->
-        let (left, right) = match assoc with
-        | Left  -> (p' - 1, p')
-        | Right -> (p', p' - 1) in
-        let s = print "%s%s%s" (show left lhs) atom (show right rhs) in
-        wrap s (p' <= p) in
-
-  show 0
+let show_expression = Printer.print
 
 let pp_expression f e = Format.fprintf f "%s" (show_expression e)

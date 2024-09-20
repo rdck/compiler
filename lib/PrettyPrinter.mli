@@ -8,6 +8,7 @@ type 'a operation =
   | Nullary
   | Unary   of precedence * 'a
   | Binary  of precedence * associativity * 'a * 'a
+  | Nary    of 'a list
 
 module type EXPRESSION = sig
 
