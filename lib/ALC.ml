@@ -1,4 +1,3 @@
-[@@@warning "-32"]
 open Core
 
 type identifier = STLC.identifier
@@ -21,11 +20,3 @@ and 'a note = {
   note : 'a ;
 }
 [@@deriving equal]
-
-(* factor these out *)
-let op_precedence = function
-  | STLC.Add -> 2
-  | STLC.Sub -> 2
-  | STLC.Mul -> 3
-let app_precedence = 4
-let abs_precedence = 1

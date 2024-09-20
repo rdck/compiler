@@ -14,6 +14,7 @@ type binop =
   | Add
   | Sub
   | Mul
+  | Exp
 [@@deriving equal, show]
 
 type 'a binding = {

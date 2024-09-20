@@ -1,7 +1,3 @@
-[@@@warning "+26"]
-[@@@warning "+27"]
-[@@@warning "+32"]
-[@@@warning "+39"]
 open Core
 module S = STLC   (* source *)
 module T = ALC    (* target *)
