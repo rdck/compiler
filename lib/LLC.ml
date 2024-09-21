@@ -94,4 +94,5 @@ let show_program { functions ; body } =
   let fs' = List.map fs ~f:f in
   sprintf "%s\n%s" (String.concat ~sep:"\n" fs') (show_expression body)
 
-let pp_program f p = Format.fprintf f "%s" (show_program p)
+let pp_program f p =
+  Format.fprintf f "%s" (show_program p)
