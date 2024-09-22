@@ -4,8 +4,6 @@
 
 open Core
 
-let print = Printf.sprintf
-
 type identifier = string
 [@@deriving equal, show]
 
@@ -20,8 +18,8 @@ let show_ty =
     | Arrow (dom, cod) ->
         let dom' = show true dom in
         let cod' = show false cod in
-        let s = print "%s → %s" dom' cod' in
-        if p then print "(%s)" s else s in
+        let s = sprintf "%s → %s" dom' cod' in
+        if p then sprintf "(%s)" s else s in
   show false
 
 let pp_ty f t = Format.fprintf f "%s" (show_ty t)
@@ -84,7 +82,7 @@ module Expression = struct
     | Abs (_, body) -> Unary (1, body)
   
   let node_text = function
-    | Lit i -> print "%d" i
+    | Lit i -> sprintf "%d" i
     | Bin (Add, _, _) -> " + "
     | Bin (Sub, _, _) -> " - "
     | Bin (Mul, _, _) -> " * "
@@ -92,7 +90,7 @@ module Expression = struct
     | Var id -> id
     | App _ -> " "
     | Abs ({ name ; value = domain }, _) ->
-        print "λ %s : %s . " name (show_ty domain)
+        sprintf "λ %s : %s . " name (show_ty domain)
 
 end
 

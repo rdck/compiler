@@ -34,7 +34,6 @@ module Make (E : EXPRESSION) = struct
   let print =
 
     let open E in
-    let sprintf = Printf.sprintf in
   
     (* wrap a string in parentheses when a condition is met *)
     let wrap (s : string) (condition : bool) =

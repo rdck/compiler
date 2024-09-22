@@ -4,8 +4,6 @@
 
 open Core
 
-let sprintf = Printf.sprintf
-
 type binop = STLC.binop
 [@@deriving equal, show]
 
@@ -70,10 +68,11 @@ type definition = {
   env : ty binding list ;
   arg : ty binding ;
   body : expression ;
+  return_type : ty ;
 }
 [@@deriving equal]
 
-let show_definition { env ; arg ; body } =
+let show_definition { env ; arg ; body ; _ } =
   let env' = [%show: ty binding list] env in
   let arg' = [%show: ty binding] arg in
   let body' = [%show: expression] body in

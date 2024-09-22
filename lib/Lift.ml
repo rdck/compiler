@@ -55,6 +55,7 @@ let lift expr =
           T.env = List.map fvs ~f:annotate ;
           T.arg = binding ;
           T.body = be ;
+          T.return_type = failwith "TODO" ;
         } in
         let sym = gensym () in {
           T.functions = Map.set bf ~key:sym ~data:def ;

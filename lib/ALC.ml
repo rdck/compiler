@@ -19,4 +19,4 @@ and 'a note = {
   expr : 'a expression ;
   note : 'a ;
 }
-[@@deriving equal]
+[@@deriving equal, show]

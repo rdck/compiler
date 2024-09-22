@@ -1,7 +1,5 @@
 open Core
 
-let sprintf = Printf.sprintf
-
 type identifier = int
 [@@deriving equal, show]
 
