@@ -11,6 +11,7 @@ type compilation = {
 let project_code x = x.code
 let project_reg x = x.reg
 
+(*
 let rec compile_expression table gensym = function
   | S.Lit i ->
       let sym = gensym () in {
@@ -44,3 +45,4 @@ let rec compile_expression table gensym = function
         code = fc @ xc @ [ T.Store (sym, STLC.Int, T.Call (fr, xr)) ] ;
         reg = sym ;
       }
+*)

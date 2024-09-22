@@ -62,9 +62,10 @@ type definition = {
   env : ty binding list ;
   arg : ty binding ;
   body : instruction list ;
+  return_type : ty ;
 }
 
-let show_definition { env ; arg ; body } =
+let show_definition { env ; arg ; body ; return_type = _ } =
   let env' = [%show: ty binding list] env in
   let arg' = [%show: ty binding] arg in
   let ins = List.map body ~f:[%show: instruction] in
@@ -74,12 +75,9 @@ let pp_definition f d =
   Format.fprintf f "%s" (show_definition d)
 
 type 'a symbol_table = 'a LLC.symbol_table
+type program = definition symbol_table
 
-type program = {
-  functions : definition symbol_table ;
-  body : instruction list ;
-}
-
+(*
 let show_program { functions ; body } =
   let fs = Map.to_alist functions in
   let f (k, v) = sprintf "f%d %s" k (show_definition v) in
@@ -90,3 +88,4 @@ let show_program { functions ; body } =
 
 let pp_program f p =
   Format.fprintf f "%s" (show_program p)
+*)

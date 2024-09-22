@@ -19,21 +19,29 @@ type ty = STLC.ty
 type 'a binding = 'a STLC.binding
 [@@deriving equal, show]
 
-type expression =
+type 'a expression =
   | Lit of int
-  | Bin of binop * expression * expression
+  | Bin of binop * 'a note * 'a note
   | Var of identifier
-  | Closure of index * expression list
-  | App of expression * expression
+  | Closure of index * 'a note list
+  | App of 'a note * 'a note
+and 'a note = {
+  expr : 'a expression ;
+  note : 'a ;
+}
+[@@deriving equal, show]
+
+type term = ty note
 [@@deriving equal]
 
-module Expression = struct
+module Term = struct
 
   open PrettyPrinter
 
-  type t = expression
+  type t = term
 
-  let structure = function
+  let structure { expr ; note = _ } =
+    match expr with
     | Lit _ -> Nullary
     | Bin (op, lhs, rhs) ->
         begin match op with
@@ -46,7 +54,8 @@ module Expression = struct
     | Closure (_, args) -> Nary args
     | App (f, x) -> Binary (5, Left, f, x)
 
-  let node_text = function
+  let node_text { expr ; note = _ } =
+    match expr with
     | Lit i -> sprintf "%d" i
     | Bin (Add, _, _) -> " + "
     | Bin (Sub, _, _) -> " - "
@@ -58,24 +67,23 @@ module Expression = struct
 
 end
 
-module Printer = PrettyPrinter.Make(Expression)
+module Printer = PrettyPrinter.Make(Term)
 
-let show_expression = Printer.print
+let show_term = Printer.print
 
-let pp_expression f e = Format.fprintf f "%s" (show_expression e)
+let pp_term f e = Format.fprintf f "%s" (show_term e)
 
 type definition = {
   env : ty binding list ;
   arg : ty binding ;
-  body : expression ;
-  return_type : ty ;
+  body : term ;
 }
 [@@deriving equal]
 
-let show_definition { env ; arg ; body ; _ } =
+let show_definition { env ; arg ; body } =
   let env' = [%show: ty binding list] env in
   let arg' = [%show: ty binding] arg in
-  let body' = [%show: expression] body in
+  let body' = [%show: term] body in
   sprintf "{%s} (%s) := %s" env' arg' body'
 
 let pp_definition f d = Format.fprintf f "%s" (show_definition d)
@@ -84,14 +92,14 @@ type 'a symbol_table = (index, 'a, Int.comparator_witness) Map.t
 
 type program = {
   functions : definition symbol_table ;
-  body : expression ;
+  body : term ;
 }
 
 let show_program { functions ; body } =
   let fs = Map.to_alist functions in
   let f (k, v) = sprintf "f%d %s" k (show_definition v) in
   let fs' = List.map fs ~f:f in
-  sprintf "%s\n%s" (String.concat ~sep:"\n" fs') (show_expression body)
+  sprintf "%s\n%s" (String.concat ~sep:"\n" fs') (show_term body)
 
 let pp_program f p =
   Format.fprintf f "%s" (show_program p)

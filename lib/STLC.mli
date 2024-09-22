@@ -30,3 +30,9 @@ type expression =
   | App of expression * expression
   | Abs of ty binding * expression
 [@@deriving equal, show]
+
+val project_domain    : ty -> ty option
+val project_codomain  : ty -> ty option
+
+val project_domain_exn    : ty -> ty
+val project_codomain_exn  : ty -> ty

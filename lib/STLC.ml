@@ -98,4 +98,22 @@ module Printer = PrettyPrinter.Make(Expression)
 
 let show_expression = Printer.print
 
-let pp_expression f e = Format.fprintf f "%s" (show_expression e)
+let pp_expression f e =
+  Format.fprintf f "%s" (show_expression e)
+
+let value_exn opt =
+  Option.value_exn opt
+
+let project_domain = function
+  | Int -> None
+  | Arrow (domain, _) -> Some domain
+
+let project_domain_exn =
+  Fn.compose value_exn project_domain
+
+let project_codomain = function
+  | Int -> None
+  | Arrow (_, codomain) -> Some codomain 
+
+let project_codomain_exn =
+  Fn.compose value_exn project_codomain
