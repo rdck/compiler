@@ -1,5 +1,5 @@
 (******************************************************************************)
-(* LIFTED LAMBDA CALCULUS                                                     *)
+(* LIFTED LAMBDA CALCULUS *)
 (******************************************************************************)
 
 open Core
@@ -17,19 +17,19 @@ type index = int
 type ty = STLC.ty
 [@@deriving equal, show]
 
-type 'a expression =
+type 'a node =
   | Lit of int
-  | Bin of binop * 'a note * 'a note
+  | Bin of binop * 'a expression * 'a expression
   | Var of identifier
-  | Closure of index * 'a note list
-  | App of 'a note * 'a note
-and 'a note = {
-  expr : 'a expression ;
+  | Closure of index * 'a expression list
+  | App of 'a expression * 'a expression
+and 'a expression = {
+  expr : 'a node ;
   note : 'a ;
 }
 [@@deriving equal, show]
 
-type term = ty note
+type term = ty expression
 [@@deriving equal]
 
 module Term = struct

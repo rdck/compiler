@@ -1,7 +1,8 @@
 (******************************************************************************)
-(* SIMPLY TYPED LAMBDA CALCULUS                                               *)
+(* SIMPLY TYPED LAMBDA CALCULUS *)
 (******************************************************************************)
 
+open Core
 open Prelude
 
 type identifier = string

@@ -1,5 +1,5 @@
 (******************************************************************************)
-(* SIMPLY TYPED LAMBDA CALCULUS                                               *)
+(* SIMPLY TYPED LAMBDA CALCULUS *)
 (******************************************************************************)
 
 open Core
@@ -86,9 +86,6 @@ let show_expression = Printer.print
 
 let pp_expression f e =
   Format.fprintf f "%s" (show_expression e)
-
-let value_exn opt =
-  Option.value_exn opt
 
 let project_domain = function
   | Int -> None

@@ -2,6 +2,15 @@
  (name compiler)
  (libraries core)
  (preprocess (pps ppx_deriving.show ppx_compare ppx_let))
+ (modules
+   Prelude
+   PrettyPrinter
+   STLC
+   Annotated
+   Annotate
+   Lifted
+   Lift
+   )
  )
 
 (env

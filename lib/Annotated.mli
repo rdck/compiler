@@ -1,8 +1,10 @@
 (******************************************************************************)
-(* ANNOTATED LAMBDA CALCULUS                                                  *)
+(* ANNOTATED LAMBDA CALCULUS *)
 (******************************************************************************)
 
-type identifier = STLC.identifier
+open Core
+
+type identifier = string
 [@@deriving equal, show]
 
 type ty = STLC.ty
@@ -11,14 +13,14 @@ type ty = STLC.ty
 type binop = STLC.binop
 [@@deriving equal, show]
 
-type 'a expression =
+type 'a node =
   | Lit of int
-  | Bin of binop * 'a note * 'a note
+  | Bin of binop * 'a expression * 'a expression
   | Var of identifier
-  | App of 'a note * 'a note
-  | Abs of identifier * 'a note
-and 'a note = {
-  expr : 'a expression ;
+  | App of 'a expression * 'a expression
+  | Abs of identifier * 'a expression
+and 'a expression = {
+  expr : 'a node ;
   note : 'a ;
 }
-[@@deriving equal]
+[@@deriving equal, show]

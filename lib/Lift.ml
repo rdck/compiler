@@ -1,10 +1,14 @@
+(******************************************************************************)
+(* Annotated -> Lifted *)
+(******************************************************************************)
+
 open Core
 open Prelude
 
-module S = ALC
-module T = LLC
+module S = Annotated
+module T = Lifted
 
-let rec free_vars gamma { S.expr ; S.note = _ } =
+let rec free_vars gamma S.{ expr ; note = _ } =
   match expr with
   | S.Lit _ -> []
   | S.Bin (_, lhs, rhs) -> free_vars gamma lhs @ free_vars gamma rhs
@@ -34,42 +38,42 @@ let lift term =
     out in
   let empty = Map.empty (module Int) in
 
-  let rec process gamma { S.expr ; S.note } =
+  let rec process gamma S.{ expr ; note } =
     match expr with
     | S.Lit i ->
-        {
-          T.functions = empty ;
-          T.body = {
-            T.expr = T.Lit i ;
-            T.note = note ;
+        T.{
+          functions = empty ;
+          body = {
+            expr = Lit i ;
+            note = note ;
           }
         }
     | S.Bin (op, lhs, rhs) ->
-        let { T.functions = lhsf ; T.body = lhse } = process gamma lhs in
-        let { T.functions = rhsf ; T.body = rhse } = process gamma rhs in
-        {
-          T.functions = Map.merge_disjoint_exn lhsf rhsf ;
-          T.body = {
-            T.expr = T.Bin (op, lhse, rhse) ;
-            T.note = note ;
+        let T.{ functions = lhsf ; body = lhse } = process gamma lhs in
+        let T.{ functions = rhsf ; body = rhse } = process gamma rhs in
+        T.{
+          functions = Map.merge_disjoint_exn lhsf rhsf ;
+          body = {
+            expr = Bin (op, lhse, rhse) ;
+            note = note ;
           }
         }
     | S.Var id ->
-        {
-          T.functions = empty ;
-          T.body = {
-            T.expr = T.Var id ;
-            T.note = note ;
+        T.{
+          functions = empty ;
+          body = {
+            expr = Var id ;
+            note = note ;
           }
         }
     | S.App (f, x) ->
-        let { T.functions = ff ; T.body = fe } = process gamma f in
-        let { T.functions = xf ; T.body = xe } = process gamma x in
-        {
-          T.functions = Map.merge_disjoint_exn ff xf ;
-          T.body = {
-            T.expr = T.App (fe, xe) ;
-            T.note = note ;
+        let T.{ functions = ff ; body = fe } = process gamma f in
+        let T.{ functions = xf ; body = xe } = process gamma x in
+        T.{
+          functions = Map.merge_disjoint_exn ff xf ;
+          body = {
+            expr = App (fe, xe) ;
+            note = note ;
           }
         }
     | S.Abs (name, body) ->
