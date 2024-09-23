@@ -3,6 +3,7 @@
 (******************************************************************************)
 
 open Core
+open Prelude
 
 type binop = STLC.binop
 [@@deriving equal, show]
@@ -14,9 +15,6 @@ type index = int
 [@@deriving equal, show]
 
 type ty = STLC.ty
-[@@deriving equal, show]
-
-type 'a binding = 'a STLC.binding
 [@@deriving equal, show]
 
 type 'a expression =
@@ -74,8 +72,8 @@ let show_term = Printer.print
 let pp_term f e = Format.fprintf f "%s" (show_term e)
 
 type definition = {
-  env : ty binding list ;
-  arg : ty binding ;
+  env : (STLC.identifier, ty) binding list ;
+  arg : (STLC.identifier, ty) binding ;
   body : term ;
 }
 [@@deriving equal]

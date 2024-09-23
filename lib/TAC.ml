@@ -1,4 +1,5 @@
 open Core
+open Prelude
 
 type identifier = int
 [@@deriving equal, show]
@@ -7,9 +8,6 @@ type name = STLC.identifier
 [@@deriving equal, show]
 
 type ty = STLC.ty
-[@@deriving equal, show]
-
-type 'a binding = 'a STLC.binding
 [@@deriving equal, show]
 
 type binop = STLC.binop
@@ -59,8 +57,8 @@ let pp_instruction f i =
   Format.fprintf f "%s" (show_instruction i)
 
 type definition = {
-  env : ty binding list ;
-  arg : ty binding ;
+  env : (STLC.identifier, ty) binding list ;
+  arg : (STLC.identifier, ty) binding ;
   body : instruction list ;
   return_type : ty ;
 }

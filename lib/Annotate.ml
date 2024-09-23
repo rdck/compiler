@@ -1,12 +1,10 @@
 open Core
+open Prelude
+
 module S = STLC   (* source *)
 module T = ALC    (* target *)
 
-type 'a binding = 'a S.binding
-[@@deriving equal, show]
-
-type 'a environment = 'a binding list
-[@@deriving equal, show]
+type 'a environment = (S.identifier, 'a) binding list
 
 let lookup (gamma : S.ty environment) (id : S.identifier) =
   let open S in
@@ -49,6 +47,6 @@ let rec forget { T.expr = expr ; T.note = note } =
   | T.App (f, x) -> S.App (forget f, forget x)
   | T.Abs (id, body) ->
       begin match note with
-      | S.Arrow (dom, _) -> S.Abs ({S.name = id ; S.value = dom}, forget body)
+      | S.Arrow (dom, _) -> S.Abs ({name = id ; value = dom}, forget body)
       | _ -> failwith "expected arrow type"
       end

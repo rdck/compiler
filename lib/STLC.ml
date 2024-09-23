@@ -3,6 +3,7 @@
 (******************************************************************************)
 
 open Core
+open Prelude
 
 type identifier = string
 [@@deriving equal, show]
@@ -39,27 +40,12 @@ let show_binop = function
 
 let pp_binop f op = Format.fprintf f "%s" (show_binop op)
 
-type 'a binding = {
-  name : identifier ;
-  value : 'a ;
-}
-[@@deriving equal]
-
-let show_binding f { name ; value } =
-  Format.asprintf "%s := %a" name f value
-
-let pp_binding af f b =
-  Format.fprintf f "%s" (show_binding af b)
-
-type 'a environment = 'a binding list
-[@@deriving equal, show]
-
 type expression =
   | Lit of int
   | Bin of binop * expression * expression
   | Var of identifier
   | App of expression * expression
-  | Abs of ty binding * expression
+  | Abs of (identifier, ty) binding * expression
 [@@deriving equal]
 
 module Expression = struct
