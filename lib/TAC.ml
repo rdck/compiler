@@ -1,10 +1,14 @@
+(******************************************************************************)
+(* THREE ADDRESS CODE *)
+(******************************************************************************)
+
 open Core
 open Prelude
 
-type identifier = int
+type index = int
 [@@deriving equal, show]
 
-type name = STLC.identifier
+type identifier = STLC.identifier
 [@@deriving equal, show]
 
 type ty = STLC.ty
@@ -14,8 +18,8 @@ type binop = STLC.binop
 [@@deriving equal, show]
 
 type register =
-  | Reg of identifier
-  | Var of name
+  | Reg of index
+  | Var of identifier
 [@@deriving equal]
 
 let show_register = function
@@ -27,8 +31,9 @@ let pp_register f r = Format.fprintf f "%s" (show_register r)
 type expression =
   | Lit of int
   | Bin of binop * register * register
-  | Closure of LLC.index * register list
+  | Closure of index * register list
   | Call of register * register
+[@@deriving equal]
 
 let show_expression = function
   | Lit i -> sprintf "%d" i
@@ -46,6 +51,7 @@ let pp_expression f e =
 type instruction =
   | Store of register * ty * expression
   | Return of register
+[@@deriving equal]
 
 let show_instruction = function
   | Store (out, t, value) ->
@@ -57,11 +63,12 @@ let pp_instruction f i =
   Format.fprintf f "%s" (show_instruction i)
 
 type definition = {
-  env : (STLC.identifier, ty) binding list ;
-  arg : (STLC.identifier, ty) binding ;
+  env : (identifier, ty) binding list ;
+  arg : (identifier, ty) binding ;
   body : instruction list ;
   return_type : ty ;
 }
+[@@deriving equal]
 
 let show_definition { env ; arg ; body ; return_type = _ } =
   let env' = [%show: ty binding list] env in
@@ -72,18 +79,20 @@ let show_definition { env ; arg ; body ; return_type = _ } =
 let pp_definition f d =
   Format.fprintf f "%s" (show_definition d)
 
-type 'a symbol_table = 'a LLC.symbol_table
-type program = definition symbol_table
+type 'a symbol_table = (index, 'a, Int.comparator_witness) Map.t
 
-(*
+type program = {
+  functions : definition symbol_table ;
+  body : instruction list ;
+}
+
 let show_program { functions ; body } =
   let fs = Map.to_alist functions in
   let f (k, v) = sprintf "f%d %s" k (show_definition v) in
   let fs' = List.map fs ~f:f in
   let body' = List.map body ~f:show_instruction in
   let body'' = String.concat ~sep:"\n" body' in
-  sprintf "%s\n%s" (String.concat ~sep:"\n" fs') body''
+  sprintf "%s\n\n%s" (String.concat ~sep:"\n\n" fs') body''
 
 let pp_program f p =
   Format.fprintf f "%s" (show_program p)
-*)

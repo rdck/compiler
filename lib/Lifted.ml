@@ -72,8 +72,8 @@ let show_term = Printer.print
 let pp_term f e = Format.fprintf f "%s" (show_term e)
 
 type definition = {
-  env : (STLC.identifier, ty) binding list ;
-  arg : (STLC.identifier, ty) binding ;
+  env : (identifier, ty) binding list ;
+  arg : (identifier, ty) binding ;
   body : term ;
 }
 [@@deriving equal]
