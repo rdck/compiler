@@ -57,6 +57,20 @@ let compile_program source =
     let kvs = List.map function_bindings ~f:f in
     Map.of_alist_exn (module String) kvs in
 
+  (*
+  let kvs = Map.to_alist index_map in
+  let printer (k, v) = Printf.printf "%s : %d\n\n" (STLC.show_ty k) v in
+  List.iter kvs ~f:printer ;
+  *)
+
+  (* ty -> indices *)
+  let folder ~key ~(data) acc =
+    let t = STLC.Arrow (data.arg.value, data.return_type) in
+    let existing_list = Map.find_multi acc t in
+    Map.set acc ~key:t ~data:(key :: existing_list) in
+  let empty = Map.empty (module STLC.Ty) in
+  let types_to_functions = Map.fold source.S.functions ~init:empty ~f:folder in
+
   T.{
     types = environments ;
     procedures = Map.empty (module String) ;
