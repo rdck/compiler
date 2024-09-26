@@ -6,10 +6,10 @@ open Core
 open Prelude
 
 type identifier = string
-[@@deriving equal, show]
+[@@deriving equal]
 
 type index = int
-[@@deriving equal, show]
+[@@deriving equal]
 
 type 'a symbol_table = (identifier, 'a, String.comparator_witness) Map.t
 
@@ -27,18 +27,6 @@ type ty =
   | Structure of (identifier, ty) binding list
   | Union of (identifier, ty) binding list
 [@@deriving equal]
-
-let rec show_ty = function
-  | Z64 -> "int64_t"
-  | TypeSymbol id -> id
-  | Enumeration _ -> failwith "TODO"
-  | Structure bindings ->
-      let f { name ; value } = sprintf "%s %s;" (show_ty value) name in
-      let bs = String.concat (List.map bindings ~f:f) ~sep:" " in
-      sprintf "struct { %s }" bs
-  | _ -> failwith ""
-
-let pp_ty f t = Format.fprintf f "%s" (show_ty t)
 
 type statement =
   | Declare of identifier * ty
@@ -61,8 +49,4 @@ type program = {
   main : statement list ;
 }
 
-let represent { types ; procedures ; main } =
-  let kvs = Map.to_alist types in
-  let show_binding (id, ty) =
-    sprintf "typedef %s %s;" ([%show: ty] ty) id in
-  String.concat (List.map kvs ~f:show_binding) ~sep:"\n"
+val represent : program -> string
