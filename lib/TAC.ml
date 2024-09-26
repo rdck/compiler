@@ -71,8 +71,8 @@ type definition = {
 [@@deriving equal]
 
 let show_definition { env ; arg ; body ; return_type = _ } =
-  let env' = [%show: ty binding list] env in
-  let arg' = [%show: ty binding] arg in
+  let env' = [%show: (identifier, ty) binding list] env in
+  let arg' = [%show: (identifier, ty) binding] arg in
   let ins = List.map body ~f:[%show: instruction] in
   sprintf "{%s} (%s) :=\n%s" env' arg' (String.concat ~sep:"\n" ins)
 

@@ -1,7 +1,7 @@
 (library
  (name compiler)
  (libraries core)
- (preprocess (pps ppx_deriving.show ppx_compare ppx_let))
+ (preprocess (pps ppx_jane ppx_deriving.show))
  (modules
    Prelude
    PrettyPrinter
@@ -13,10 +13,14 @@
    TAC
    Translate
    Example
+   Cmm
+   CmmBackend
    )
  )
 
 (env
  (dev
   (flags
-   (:standard -w -unused-open))))
+   (:standard -w -unused-open)
+   (:standard -warn-error -A)
+)))

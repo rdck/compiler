@@ -79,8 +79,8 @@ type definition = {
 [@@deriving equal]
 
 let show_definition { env ; arg ; body } =
-  let env' = [%show: ty binding list] env in
-  let arg' = [%show: ty binding] arg in
+  let env' = [%show: (identifier, ty) binding list] env in
+  let arg' = [%show: (identifier, ty) binding] arg in
   let body' = [%show: term] body in
   sprintf "{%s} (%s) := %s" env' arg' body'
 

@@ -10,11 +10,14 @@ type ('k, 'v) binding = {
 }
 [@@deriving equal]
 
-let show_binding f { name ; value } =
-  Format.asprintf "%s := %a" name f value
+let show_binding fk fv { name ; value } =
+  Format.asprintf "%a := %a" fk name fv value
 
-let pp_binding af f b =
-  Format.fprintf f "%s" (show_binding af b)
+let pp_binding fk fv f b =
+  Format.fprintf f "%s" (show_binding fk fv b)
+
+let project_name binding = binding.name
+let project_value binding = binding.value
 
 let value_exn opt =
   Option.value_exn opt

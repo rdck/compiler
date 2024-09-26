@@ -2,14 +2,14 @@ open Core
 open Prelude
 open STLC
 
-let ztz = Arrow (Int, Int)
-let t0 = Arrow (Int, ztz)
-let t1 = Arrow (ztz, Int)
-let t2 = Arrow (Int, t0)
+let ztz = Arrow (Z64, Z64)
+let t0 = Arrow (Z64, ztz)
+let t1 = Arrow (ztz, Z64)
+let t2 = Arrow (Z64, t0)
 let t3 = Arrow (t2, t2)
 
 let bind s t = { name = s ; value = t }
-let add = Abs (bind "a" Int, Abs ((bind "b" Int), Bin (Add, Var "a", Var "b")))
+let add = Abs (bind "a" Z64, Abs ((bind "b" Z64), Bin (Add, Var "a", Var "b")))
 let add_one = App (add, Lit 1)
 let three = App (add_one, Lit 2)
 
@@ -23,7 +23,7 @@ let e5 = Bin (Mul, Lit 2, Bin (Add, Lit 3, Lit 4)) (* 2 * (3 + 4) *)
 let e6 = App (App (Var "f", Lit 2), Lit 3) (* f 2 3 *)
 let e7 = Bin (Mul, App (Var "f", Lit 2), Lit 3) (* f 2 * 3 *)
 let e8 = App (Var "f", Bin (Mul, Lit 2, Lit 3)) (* f (2 * 3 *)
-let e9 = Abs (bind "x" Int, Bin (Mul, Var "x", Lit 2)) (* λ x : Z . x * 2 *)
+let e9 = Abs (bind "x" Z64, Bin (Mul, Var "x", Lit 2)) (* λ x : Z . x * 2 *)
 let e10 = App (e9, Lit 3) (* (λ x : Z . x * 2) 3 *)
 let e11 = App (e9, e5)
 

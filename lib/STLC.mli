@@ -9,9 +9,17 @@ type identifier = string
 [@@deriving equal, show]
 
 type ty =
-  | Int
+  | Z64
   | Arrow of ty * ty
-[@@deriving equal, show]
+[@@deriving equal, show, compare, sexp]
+
+(* comparable types *)
+module Ty : sig
+
+  type t = ty [@@deriving compare, sexp]
+  include Comparable.S with type t := t
+
+end
 
 type binop =
   | Add

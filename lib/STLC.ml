@@ -9,13 +9,13 @@ type identifier = string
 [@@deriving equal, show]
 
 type ty =
-  | Int
+  | Z64
   | Arrow of ty * ty
-[@@deriving equal]
+[@@deriving equal, compare, sexp]
 
 let show_ty =
   let rec show p = function
-    | Int -> "Z64"
+    | Z64 -> "Z64"
     | Arrow (dom, cod) ->
         let dom' = show true dom in
         let cod' = show false cod in
@@ -24,6 +24,20 @@ let show_ty =
   show false
 
 let pp_ty f t = Format.fprintf f "%s" (show_ty t)
+
+module Ty = struct
+
+  module T = struct
+
+    type t = ty
+    [@@deriving compare, sexp]
+
+  end
+
+  include T
+  include Comparable.Make(T)
+
+end
 
 type binop =
   | Add
@@ -88,14 +102,14 @@ let pp_expression f e =
   Format.fprintf f "%s" (show_expression e)
 
 let project_domain = function
-  | Int -> None
+  | Z64 -> None
   | Arrow (domain, _) -> Some domain
 
 let project_domain_exn =
   Fn.compose value_exn project_domain
 
 let project_codomain = function
-  | Int -> None
+  | Z64 -> None
   | Arrow (_, codomain) -> Some codomain 
 
 let project_codomain_exn =
