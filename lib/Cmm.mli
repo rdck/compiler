@@ -11,8 +11,6 @@ type identifier = string
 type index = int
 [@@deriving equal]
 
-type 'a symbol_table = (identifier, 'a, String.comparator_witness) Map.t
-
 type expression =
   | Var of identifier
   | Arrow of expression * expression
@@ -24,8 +22,8 @@ type ty =
   | Z64
   | TypeSymbol of identifier
   | Enumeration of identifier list
-  | Structure of (identifier, ty) binding list
-  | Union of (identifier, ty) binding list
+  | Structure of (identifier, ty) bindings
+  | Union of (identifier, ty) bindings
 [@@deriving equal]
 
 type statement =
@@ -44,8 +42,8 @@ type procedure = {
 }
 
 type program = {
-  types : ty symbol_table ;
-  procedures : procedure symbol_table ;
+  types : (identifier, ty) bindings ;
+  procedures : (identifier, procedure) bindings ;
   main : statement list ;
 }
 

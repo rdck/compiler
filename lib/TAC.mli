@@ -35,7 +35,7 @@ type instruction =
 [@@deriving equal, show]
 
 type definition = {
-  env : (identifier, ty) binding list ;
+  env : (identifier, ty) bindings ;
   arg : (identifier, ty) binding ;
   body : instruction list ;
   return_type : ty ;

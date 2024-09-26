@@ -11,8 +11,6 @@ type identifier = string
 type index = int
 [@@deriving equal, show]
 
-type 'a symbol_table = (identifier, 'a, String.comparator_witness) Map.t
-
 type expression =
   | Var of identifier
   | Arrow of expression * expression
@@ -24,19 +22,23 @@ type ty =
   | Z64
   | TypeSymbol of identifier
   | Enumeration of identifier list
-  | Structure of (identifier, ty) binding list
-  | Union of (identifier, ty) binding list
+  | Structure of (identifier, ty) bindings
+  | Union of (identifier, ty) bindings
 [@@deriving equal]
 
 let rec show_ty = function
   | Z64 -> "int64_t"
   | TypeSymbol id -> id
-  | Enumeration _ -> failwith "TODO"
+  | Enumeration ids ->
+      sprintf "enum { %s }" (String.concat ~sep:",\n" ids)
   | Structure bindings ->
       let f { name ; value } = sprintf "%s %s;" (show_ty value) name in
       let bs = String.concat (List.map bindings ~f:f) ~sep:" " in
       sprintf "struct { %s }" bs
-  | _ -> failwith ""
+  | Union bindings ->
+      let f { name ; value } = sprintf "%s %s;" (show_ty value) name in
+      let bs = String.concat (List.map bindings ~f:f) ~sep:" " in
+      sprintf "union { %s }" bs
 
 let pp_ty f t = Format.fprintf f "%s" (show_ty t)
 
@@ -56,13 +58,12 @@ type procedure = {
 }
 
 type program = {
-  types : ty symbol_table ;
-  procedures : procedure symbol_table ;
+  types : (identifier, ty) bindings ;
+  procedures : (identifier, procedure) bindings ;
   main : statement list ;
 }
 
 let represent { types ; procedures ; main } =
-  let kvs = Map.to_alist types in
-  let show_binding (id, ty) =
-    sprintf "typedef %s %s;" ([%show: ty] ty) id in
-  String.concat (List.map kvs ~f:show_binding) ~sep:"\n"
+  let show_binding { name ; value } =
+    sprintf "typedef %s %s;" ([%show: ty] value) name in
+  String.concat (List.map types ~f:show_binding) ~sep:"\n"

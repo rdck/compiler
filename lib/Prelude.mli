@@ -6,6 +6,9 @@ type ('k, 'v) binding = {
 }
 [@@deriving equal, show]
 
+type ('k, 'v) bindings = ('k, 'v) binding list
+[@@deriving equal, show]
+
 val project_name : ('k, 'v) binding -> 'k
 val project_value : ('k, 'v) binding -> 'v
 

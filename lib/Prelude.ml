@@ -16,6 +16,9 @@ let show_binding fk fv { name ; value } =
 let pp_binding fk fv f b =
   Format.fprintf f "%s" (show_binding fk fv b)
 
+type ('k, 'v) bindings = ('k, 'v) binding list
+[@@deriving equal, show]
+
 let project_name binding = binding.name
 let project_value binding = binding.value
 
