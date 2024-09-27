@@ -49,3 +49,5 @@ type program = {
   body : instruction list ;
 }
 [@@deriving show]
+
+val definition_type : definition -> ty

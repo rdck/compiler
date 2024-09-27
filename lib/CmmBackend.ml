@@ -8,87 +8,137 @@ type 'a table = (STLC.ty, 'a, STLC.Ty.comparator_witness) Map.t
 
 let compile_program source =
 
-  (* compute list of types in a list of instructions *)
-  let block_types =
-    let filter = function
-      | S.Store (_, t, _) -> Some t
-      | S.Return _ -> None in
-    List.filter_map ~f:filter in
-
   let function_bindings = Map.to_alist source.S.functions in
-  let function_values = List.map function_bindings ~f:snd in
+  let function_definitions = List.map function_bindings ~f:snd in
 
-  let program_types =
-    let bodies = List.map function_values ~f:(fun v -> v.body) in
-    List.concat (List.map (source.S.body :: bodies) ~f:block_types) in
+  (* a list of all function types in the program *)
+  let function_types : STLC.ty list = List.map function_definitions ~f:S.definition_type in
 
-  let index_map =
-    let sorted = List.dedup_and_sort program_types ~compare:STLC.Ty.compare in
+  (* a map from each function type to its index *)
+  let type_to_index =
+    let sorted = List.dedup_and_sort function_types ~compare:STLC.Ty.compare in
     let indexed = List.mapi sorted ~f:(Fn.flip Tuple2.create) in
     Map.of_alist_exn (module STLC.Ty) indexed in
 
-  let type_name index = sprintf "T%d" index in
-  let env_name index = sprintf "F%d" index in
+  (* lookup a type's index via the above map *)
+  let lookup_type_index = Map.find_exn type_to_index in
+
+  let type_name index     = sprintf "T%d" index in
+  let env_name index      = sprintf "F%d" index in
   let type_tag_name index = sprintf "T%dTag" index in
+  let function_name index = sprintf "f%d" index in
+  let enum_item_name type_index function_index =
+    sprintf "%s_%s" (type_name type_index) (env_name function_index) in
+  let application_name index = sprintf "apply_t%d" index in
 
   let atomic_type t =
     match t with
     | STLC.Z64 -> T.Z64
     | STLC.Arrow (domain, codomain) ->
-        T.TypeSymbol (type_name (Map.find_exn index_map t)) in
+        T.TypeSymbol (type_name (lookup_type_index t)) in
 
+  (* a list of structs representing each function environment *)
   let environments =
 
     let environment S.{ env ; arg ; body = _ ; return_type = _ } =
-      let f { name ; value } = { name ; value = atomic_type value } in
-      T.Structure (List.map (arg :: env) ~f:f) in
+      let atomicize { name ; value } = { name ; value = atomic_type value } in
+      T.Structure (List.map (arg :: env) ~f:atomicize) in
 
-    let f (k, v) = { name = env_name k ; value = environment v } in
-    List.map function_bindings ~f:f in
+    let environment_binding (index, definition) = {
+      name = env_name index ;
+      value = environment definition ;
+    } in
 
-  let types_to_functions =
-    let folder ~key ~data acc =
-      let t = STLC.Arrow (data.S.arg.value, data.return_type) in
-      let t' = Map.find_exn index_map t in
-      let existing_list = Map.find_multi acc t' in
-      Map.set acc ~key:t' ~data:(key :: existing_list) in
-    let empty = Map.empty (module Int) in
-    Map.fold source.S.functions ~init:empty ~f:folder in
+    List.map function_bindings ~f:environment_binding in
 
-  let types_to_functions' =
-    Map.to_alist types_to_functions in
+  (* filter functions by type *)
+  let functions_of_type t =
+    let filter (_, d) = [%equal: STLC.ty] t (S.definition_type d) in
+    let bindings = List.filter function_bindings ~f:filter in
+    List.map bindings ~f:fst in
 
-  let lookup_type t =
-    let k = Map.find_exn index_map t in
-    Map.find_exn types_to_functions k in
+  (* a map from each function type to the list of functions inhabiting it *)
+  let type_to_functions =
+    let associate_functions t = (t, functions_of_type t) in
+    let kvs = List.map function_types ~f:associate_functions in
+    Map.of_alist_exn (module STLC.Ty) kvs in
 
-  let function_tags =
+  (* lookup the functions inhabiting a type in the above map *)
+  let lookup_type_functions = Map.find_exn type_to_functions in
+
+  (* a map from each function type index to the list of functions inhabiting it *)
+  let type_index_to_functions =
+    Map.map_keys_exn (module Int) type_to_functions ~f:lookup_type_index in
+
+  (* corresponding association list *)
+  let type_index_with_functions = Map.to_alist type_index_to_functions in
+
+  (* the enum for each function type *)
+  let function_enums =
+
     let to_binding (type_index, function_indices) =
-      let item_name idx =
-        sprintf "%s_%s" (type_name type_index) (env_name idx) in
-      let ids = List.map function_indices ~f:item_name in
+      let ids = List.map function_indices ~f:(enum_item_name type_index) in
       { name = type_tag_name type_index ; value = T.Enumeration ids } in
-    List.map types_to_functions' ~f:to_binding in
 
-  let function_unions =
+    List.map type_index_with_functions ~f:to_binding in
+
+  (* the closure representation for each function type *)
+  let closure_structs =
+
     let to_binding (type_index, function_indices) =
       let to_union_binding fidx = {
-        name = sprintf "f%d" fidx ;
+        name = function_name fidx ;
         value = T.TypeSymbol (env_name fidx) ;
       } in
       let union = {
         name = "u" ;
         value = T.Union (List.map function_indices ~f:to_union_binding) ;
       } in
-      let tag = { name = "tag" ; value = T.TypeSymbol (type_tag_name type_index) } in
+      let tag = {
+        name = "tag" ;
+        value = T.TypeSymbol (type_tag_name type_index) ;
+      } in
       {
         name = type_name type_index ;
         value = T.Structure [tag ; union] ;
       } in
-    List.map types_to_functions' ~f:to_binding in
+
+    List.map type_index_with_functions ~f:to_binding in
+
+  (* the `apply` function for each function type *)
+  let application_procedures =
+
+    (* generate the `apply` function for a given function type *)
+    let application_procedure function_type =
+
+      let type_index = lookup_type_index function_type in
+      let procedure_id = application_name type_index in
+
+      let procedure =
+
+        let to_case fidx = T.{
+          tag = T.Var (enum_item_name type_index fidx) ;
+          body = [] ;
+        } in
+
+        let cases = List.map (lookup_type_functions function_type) ~f:to_case in
+        let switch_statement = T.Switch (T.Arrow (T.Var "fp", T.Var "tag"), cases) in
+
+        T.{
+          arg = {
+            name = "fp" ;
+            value = T.Pointer (T.TypeSymbol (type_name type_index)) ;
+          } ;
+          body = [ switch_statement ] ;
+          return_type = atomic_type (STLC.project_codomain_exn function_type) ;
+        } in
+
+      { name = procedure_id ; value = procedure } in
+
+    List.map function_types ~f:application_procedure in
 
   T.{
-    types = environments @ function_tags @ function_unions;
-    procedures = [] ;
+    types = environments @ function_enums @ closure_structs;
+    procedures = application_procedures ;
     main = [] ;
   }

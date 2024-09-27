@@ -24,6 +24,7 @@ type ty =
   | Enumeration of identifier list
   | Structure of (identifier, ty) bindings
   | Union of (identifier, ty) bindings
+  | Pointer of ty
 [@@deriving equal]
 
 type statement =
@@ -39,6 +40,7 @@ and case = {
 type procedure = {
   arg : (identifier, ty) binding ;
   body : statement list ;
+  return_type : ty ;
 }
 
 type program = {

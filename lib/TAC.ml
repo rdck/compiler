@@ -96,3 +96,6 @@ let show_program { functions ; body } =
 
 let pp_program f p =
   Format.fprintf f "%s" (show_program p)
+
+let definition_type definition =
+  STLC.Arrow (definition.arg.value, definition.return_type)

@@ -24,6 +24,7 @@ type ty =
   | Enumeration of identifier list
   | Structure of (identifier, ty) bindings
   | Union of (identifier, ty) bindings
+  | Pointer of ty
 [@@deriving equal]
 
 let rec show_ty = function
@@ -39,6 +40,7 @@ let rec show_ty = function
       let f { name ; value } = sprintf "%s %s;" (show_ty value) name in
       let bs = String.concat (List.map bindings ~f:f) ~sep:" " in
       sprintf "union { %s }" bs
+  | Pointer t -> sprintf "%s*" (show_ty t)
 
 let pp_ty f t = Format.fprintf f "%s" (show_ty t)
 
@@ -55,6 +57,7 @@ and case = {
 type procedure = {
   arg : (identifier, ty) binding ;
   body : statement list ;
+  return_type : ty ;
 }
 
 type program = {
