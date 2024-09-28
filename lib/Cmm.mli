@@ -11,12 +11,18 @@ type identifier = string
 type index = int
 [@@deriving equal]
 
+type binop =
+  | Add
+  | Sub
+  | Mul
+
 type expression =
   | Var of identifier
+  | Lit of int
   | Arrow of expression * expression
   | Dot of expression * expression
-  | Apply of expression
-  | Binop of expression * expression
+  | Apply of expression * expression list
+  | Bin of binop * expression * expression
 
 type ty =
   | Z64

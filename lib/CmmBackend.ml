@@ -6,6 +6,11 @@ module T = Cmm (* target *)
 
 type 'a table = (STLC.ty, 'a, STLC.Ty.comparator_witness) Map.t
 
+type compilation = {
+  statements : T.statement list ;
+  value : T.expression ;
+}
+
 let compile_program source =
 
   let function_bindings = Map.to_alist source.S.functions in
@@ -105,6 +110,37 @@ let compile_program source =
 
     List.map type_index_with_functions ~f:to_binding in
 
+  let register_name = function
+    | S.Reg idx -> sprintf "r%d" idx
+    | S.Var id -> id in
+
+  let compile_op = function
+    | STLC.Add -> T.Add
+    | STLC.Sub -> T.Sub
+    | STLC.Mul -> T.Mul
+    | STLC.Exp -> failwith "TODO: exponentiation" in
+
+  let var r = T.Var (register_name r) in
+
+  let compile_expression = function
+    | S.Lit i -> T.Lit i
+    | S.Bin (op, lhs, rhs) ->
+        T.Bin (compile_op op, var lhs, var rhs)
+    | S.Closure (fidx, args) -> failwith ""
+    | _ -> failwith "" in
+
+  (* @rdk: this should just match on the value expression to handle the closure case *)
+  let compile_instruction = function
+    | S.Store (dest, t, value) ->
+        let name = register_name dest in
+        let declaration = T.Declare (name, atomic_type t) in
+        let assignment = T.Assign (T.Var name, compile_expression value) in
+        [ declaration ; assignment ]
+    | _ -> failwith "" in
+  
+  let compile_instructions instructions =
+    List.concat (List.map instructions ~f:compile_instruction) in
+
   (* the `apply` function for each function type *)
   let application_procedures =
 
@@ -116,10 +152,12 @@ let compile_program source =
 
       let procedure =
 
-        let to_case fidx = T.{
-          tag = T.Var (enum_item_name type_index fidx) ;
-          body = [] ;
-        } in
+        let to_case fidx =
+          let definition = Map.find_exn source.S.functions fidx in
+          T.{
+            tag = T.Var (enum_item_name type_index fidx) ;
+            body = compile_instructions definition.S.body ;
+          } in
 
         let cases = List.map (lookup_type_functions function_type) ~f:to_case in
         let switch_statement = T.Switch (T.Arrow (T.Var "fp", T.Var "tag"), cases) in
