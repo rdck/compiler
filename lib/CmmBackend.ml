@@ -17,7 +17,9 @@ let compile_program source =
   let function_definitions = List.map function_bindings ~f:snd in
 
   (* a list of all function types in the program *)
-  let function_types : STLC.ty list = List.map function_definitions ~f:S.definition_type in
+  let function_types =
+    let multi = List.map function_definitions ~f:S.definition_type in
+    List.dedup_and_sort multi ~compare:STLC.Ty.compare in
 
   (* a map from each function type to its index *)
   let type_to_index =
@@ -110,6 +112,8 @@ let compile_program source =
 
     List.map type_index_with_functions ~f:to_binding in
 
+  (*
+
   let register_name = function
     | S.Reg idx -> sprintf "r%d" idx
     | S.Var id -> id in
@@ -175,8 +179,11 @@ let compile_program source =
 
     List.map function_types ~f:application_procedure in
 
+  *)
+
   T.{
     types = environments @ function_enums @ closure_structs;
-    procedures = application_procedures ;
+    (* procedures = application_procedures ; *)
+    procedures = [] ;
     main = [] ;
   }

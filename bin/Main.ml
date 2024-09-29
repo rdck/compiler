@@ -2,7 +2,7 @@ open Core
 open Compiler
 
 let _ =
-  let compiled = Example.three
+  let compiled = Example.recursion
     |> Annotate.annotate_exn
     |> Lift.lift
     |> Translate.compile_program
