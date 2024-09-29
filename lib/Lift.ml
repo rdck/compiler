@@ -9,7 +9,7 @@ module S = Annotated
 module T = Lifted
 
 let rec free_vars gamma S.{ expr ; note = _ } =
-  match expr with
+  let multi = match expr with
   | S.Lit _ -> []
   | S.Bin (_, lhs, rhs) -> free_vars gamma lhs @ free_vars gamma rhs
   | S.Var id ->
@@ -17,7 +17,8 @@ let rec free_vars gamma S.{ expr ; note = _ } =
       if member then [] else [id]
   | S.App (f, x) -> free_vars gamma f @ free_vars gamma x
   | S.Abs (id, body) ->
-      free_vars (id :: gamma) body
+      free_vars (id :: gamma) body in
+  List.stable_dedup multi ~compare:String.compare
 
 (* factor out *)
 let lookup gamma id =
