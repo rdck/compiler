@@ -2,13 +2,27 @@ open Core
 open Prelude
 open STLC
 
+let bind s t = { name = s ; value = t }
+let lit i = Lit i
+let bin op lhs rhs = Bin (op, lhs, rhs)
+let var id = Var id
+let app f x = App (f, x)
+let abs id t e = Abs (bind id t, e)
+let arrow domain codomain = Arrow (domain, codomain)
+
+let recursion =
+  let twice = abs "f" (arrow Z64 Z64) (
+    abs "x" Z64 (app (var "f") (app (var "f") (var "x")))
+  ) in
+  let add_one = abs "x" Z64 (bin Add (var "x") (lit 1)) in
+  app (app twice add_one) (lit 0)
+
 let ztz = Arrow (Z64, Z64)
 let t0 = Arrow (Z64, ztz)
 let t1 = Arrow (ztz, Z64)
 let t2 = Arrow (Z64, t0)
 let t3 = Arrow (t2, t2)
 
-let bind s t = { name = s ; value = t }
 let add = Abs (bind "a" Z64, Abs ((bind "b" Z64), Bin (Add, Var "a", Var "b")))
 let add_one = App (add, Lit 1)
 let three = App (add_one, Lit 2)
