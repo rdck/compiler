@@ -37,7 +37,7 @@ let rec show_ty = function
   | Z64 -> "int64_t"
   | TypeSymbol id -> id
   | Enumeration ids ->
-      sprintf "enum { %s }" (String.concat ~sep:",\n" ids)
+      sprintf "enum { %s }" (String.concat ~sep:", " ids)
   | Structure bindings ->
       let f { name ; value } = sprintf "%s %s;" (show_ty value) name in
       let bs = String.concat (List.map bindings ~f:f) ~sep:" " in
