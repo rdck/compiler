@@ -19,7 +19,7 @@ let show_ty =
     | Arrow (dom, cod) ->
         let dom' = show true dom in
         let cod' = show false cod in
-        let s = sprintf "%s → %s" dom' cod' in
+        let s = sprintf "%s -> %s" dom' cod' in
         if p then sprintf "(%s)" s else s in
   show false
 
