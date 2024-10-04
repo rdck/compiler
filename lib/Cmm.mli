@@ -37,6 +37,7 @@ type statement =
   | Declare of identifier * ty
   | Assign of expression * expression
   | Switch of expression * case list
+  | Block of statement list
   | Return of expression
 and case = {
   tag : expression ;

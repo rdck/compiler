@@ -11,6 +11,9 @@ type identifier = string
 type index = int
 [@@deriving equal, show]
 
+let concat_map xs f sep =
+  String.concat (List.map xs ~f:f) ~sep:sep
+
 type binop =
   | Add
   | Sub
@@ -40,12 +43,10 @@ let rec show_ty = function
       sprintf "enum { %s }" (String.concat ~sep:", " ids)
   | Structure bindings ->
       let f { name ; value } = sprintf "%s %s;" (show_ty value) name in
-      let bs = String.concat (List.map bindings ~f:f) ~sep:" " in
-      sprintf "struct { %s }" bs
+      sprintf "struct { %s }" (concat_map bindings f " ")
   | Union bindings ->
       let f { name ; value } = sprintf "%s %s;" (show_ty value) name in
-      let bs = String.concat (List.map bindings ~f:f) ~sep:" " in
-      sprintf "union { %s }" bs
+      sprintf "union { %s }" (concat_map bindings f " ")
   | Pointer t -> sprintf "%s*" (show_ty t)
 
 let pp_ty f t = Format.fprintf f "%s" (show_ty t)
@@ -54,6 +55,7 @@ type statement =
   | Declare of identifier * ty
   | Assign of expression * expression
   | Switch of expression * case list
+  | Block of statement list
   | Return of expression
 and case = {
   tag : expression ;
@@ -68,13 +70,13 @@ let render_binop = function
 let rec render_expression =
   let render = render_expression in function
     | Var id -> id
+    | Lit i -> sprintf "%dll" i
     | Arrow (lhs, rhs) ->
         sprintf "%s->%s" (render lhs) (render rhs)
     | Dot (lhs, rhs) ->
         sprintf "%s.%s" (render lhs) (render rhs)
     | Apply (f, args) ->
-        let args' = String.concat (List.map args ~f:render) ~sep:", " in
-        sprintf "%s(%s)" (render f) args'
+        sprintf "%s(%s)" (render f) (concat_map args render ", ")
     | Bin (op, lhs, rhs) ->
         sprintf "%s %s %s" (render lhs) (render_binop op) (render rhs)
 
@@ -83,13 +85,13 @@ let rec render_statement = function
   | Assign (lvalue, rvalue) ->
       sprintf "%s = %s;" (render_expression lvalue) (render_expression rvalue)
   | Switch (control, cases) ->
-      let cases' = String.concat (List.map cases ~f:render_case) ~sep:"\n" in
-      sprintf "switch (%s) {\n%s\n}" (render_expression control) cases'
+      sprintf "switch (%s) {\n%s\n}" (render_expression control) (concat_map cases render_case "\n")
+  | Block statements ->
+      sprintf "{\n%s\n}" (concat_map statements render_statement "\n")
   | Return e ->
       sprintf "return %s;" (render_expression e)
 and render_case { tag ; body } =
-  let body' = String.concat (List.map body ~f:render_statement) ~sep:"\n" in
-  sprintf "case %s:\n{\n%s\n} break;" (render_expression tag) body'
+  sprintf "case %s:\n{\n%s\n} break;" (render_expression tag) (concat_map body render_statement "\n")
 
 type procedure = {
   arg : (identifier, ty) binding ;
@@ -103,16 +105,14 @@ type program = {
   main : statement list ;
 }
 
-let represent_block statements =
-
-  String.concat (List.map statements ~f:render_statement) ~sep:"\n"
+let represent_block statements = concat_map statements render_statement "\n"
 
 let represent { types ; procedures ; main } =
 
   let typedef { name ; value } =
     sprintf "typedef %s %s;" ([%show: ty] value) name in
 
-  let types' = String.concat (List.map types ~f:typedef) ~sep:"\n" in
+  let types' = concat_map types typedef "\n" in
 
   let procedure { name ; value = proc } =
 
@@ -122,6 +122,6 @@ let represent { types ; procedures ; main } =
     sprintf "%s %s(%s) {\n%s}"
     (show_ty proc.return_type) name (argument proc.arg) (represent_block proc.body) in
 
-  let procedures' = String.concat (List.map procedures ~f:procedure) ~sep:"\n" in
+  let procedures' = concat_map procedures procedure "\n" in
 
   String.concat [ types' ; procedures' ] ~sep:"\n\n"
