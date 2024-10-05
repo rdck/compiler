@@ -40,7 +40,7 @@ let compile_program source =
 
   let atomic_type t =
     match t with
-    | STLC.Z64 -> T.Z64
+    | STLC.Z64 -> T.TypeSymbol "int64_t"
     | STLC.Arrow (domain, codomain) ->
         T.TypeSymbol (type_name (lookup_type_index t)) in
 
@@ -49,7 +49,11 @@ let compile_program source =
 
     let environment S.{ env ; arg ; body = _ ; return_type = _ } =
       let atomicize { name ; value } = { name ; value = atomic_type value } in
-      T.Structure (List.map (arg :: env) ~f:atomicize) in
+      let reference_counter = {
+        name = "rc" ;
+        value = T.TypeSymbol "int64_t" ;
+      } in
+      T.Structure (reference_counter :: (List.map env ~f:atomicize)) in
 
     let environment_binding (index, definition) = {
       name = env_name index ;
@@ -88,29 +92,140 @@ let compile_program source =
       { name = type_tag_name type_index ; value = T.Enumeration ids } in
 
     List.map type_index_with_functions ~f:to_binding in
-
-  (* the closure representation for each function type *)
+  
   let closure_structs =
 
-    let to_binding (type_index, function_indices) =
-      let to_union_binding fidx = {
-        name = function_name fidx ;
-        value = T.TypeSymbol (env_name fidx) ;
-      } in
-      let union = {
-        name = "u" ;
-        value = T.Union (List.map function_indices ~f:to_union_binding) ;
-      } in
-      let tag = {
-        name = "tag" ;
-        value = T.TypeSymbol (type_tag_name type_index) ;
-      } in
+    let structure t =
+      let index = lookup_type_index t in
+      let def = T.Structure [
+        { name = "tag" ; value = T.TypeSymbol (type_tag_name index) } ;
+        { name = "env" ; value = T.Pointer (T.TypeSymbol "void") } ;
+      ] in
+      { name = type_name index ; value = def } in
+
+    List.map function_types ~f:structure in
+
+  (* code gen *)
+
+  let register_name = function
+    | S.Reg idx -> sprintf "r%d" idx
+    | S.Var id -> id in
+
+  let compile_op = function
+    | STLC.Add -> T.Add
+    | STLC.Sub -> T.Sub
+    | STLC.Mul -> T.Mul
+    | STLC.Exp -> failwith "TODO: exponentiation" in
+
+  let var r = T.Var (register_name r) in
+  let ass r = T.Assignable (var r) in
+
+  let allocation_pointer = "aptr" in
+
+  let apply_procedures =
+
+    let apply_procedure function_type =
+
+      let functions = functions_of_type function_type in
+      let ft_index = lookup_type_index function_type in
+      let domain = STLC.project_domain_exn function_type in
+      let codomain = STLC.project_codomain_exn function_type in
+
+      let to_case fidx =
+
+        let fdef = Map.find_exn source.S.functions fidx in
+        let filter_store_register r' = function
+          | S.Store (r, t, _) ->
+              if [%equal: S.register] r r' then Some t else None
+          | _ -> None in
+        let filter_arg_type id { name ; value } =
+          if String.equal id name then Some value else None in
+        let get_register_type = function
+          | S.Reg _ as r -> List.find_map_exn fdef.S.body ~f:(filter_store_register r)
+          | S.Var id ->
+              begin match List.find_map fdef.S.env ~f:(filter_arg_type id) with
+              | Some t -> t
+              | None -> domain
+              end in
+
+        let compile_expression = function
+          | S.Lit i -> T.Lit i
+          | S.Bin (op, lhs, rhs) ->
+              T.Bin (
+                compile_op op,
+                T.Assignable (T.Var (register_name lhs)),
+                T.Assignable (T.Var (register_name rhs))
+              )
+          | S.Closure (fidx, args) -> failwith "UNREACHABLE"
+          | S.Call (f, x) ->
+              let ft_index' = lookup_type_index (get_register_type f) in
+              T.Call (application_name ft_index', [ ass f ; ass x ]) in
+
+        let compile_instruction =
+          function
+            | S.Store (dest, t, Closure (fidx, args)) ->
+                let rname = register_name dest in
+                let tidx = lookup_type_index t in
+                let register_decl = T.Declare (rname, atomic_type t) in
+                let tag_assignment = T.Assign (
+                  T.Dot (T.Var rname, "tag"),
+                  T.Assignable (T.Var (enum_item_name tidx fidx))
+                ) in
+                let eptr_type = T.Pointer (T.TypeSymbol (env_name fidx)) in
+                let declaration = T.Declare (allocation_pointer, eptr_type) in
+                let malloc = T.Assign (
+                  T.Var allocation_pointer,
+                  T.Assignable (T.Var "malloc(sizeof(*aptr))") (* fix later *)
+                ) in
+                let env_assignment = T.Assign (
+                  T.Dot (T.Var rname, "env"),
+                  T.Assignable (T.Var "aptr")
+                ) in
+                let arg_assignment = [] in
+                let block = T.Block (declaration :: malloc :: env_assignment :: arg_assignment) in
+                [ register_decl ; tag_assignment ; block ]
+            | S.Store (dest, t, v) ->
+                let rname = register_name dest in
+                let register_decl = T.Declare (rname, atomic_type t) in
+                let assignment = T.Assign (T.Var rname, compile_expression v) in
+                [ register_decl ; assignment ]
+            | S.Return r -> [T.Return (T.Assignable (T.Var (register_name r)))] in
+
+        let arg_decl = T.Declare (fdef.S.arg.name, atomic_type domain) in
+        let arg_def = T.Assign (
+          T.Var fdef.S.arg.name,
+          T.Assignable (T.Var "arg")
+        ) in
+
+        T.{
+          tag = T.Assignable (T.Var (enum_item_name ft_index fidx)) ;
+          body = arg_decl :: arg_def
+          :: List.concat (List.map fdef.S.body compile_instruction) ;
+        } in
+
+      let cases = List.map functions ~f:to_case in
+
       {
-        name = type_name type_index ;
-        value = T.Structure [tag ; union] ;
+        name = application_name ft_index ;
+        value = T.{
+          args = [
+            { name = "fp" ; value = T.TypeSymbol (type_name ft_index) ; } ;
+            { name = "arg" ; value = atomic_type domain ; } ;
+          ] ;
+          body = [
+            T.Switch (T.Assignable (T.Var "fp.tag"), cases) ;
+          ] ;
+          return_type = atomic_type codomain ;
+        } ;
       } in
 
-    List.map type_index_with_functions ~f:to_binding in
+    List.map function_types ~f:apply_procedure in
+
+  T.{
+    types = function_enums @ closure_structs @ environments;
+    procedures = apply_procedures ;
+    main = [] ;
+  }
 
   (*
 
@@ -180,10 +295,3 @@ let compile_program source =
     List.map function_types ~f:application_procedure in
 
   *)
-
-  T.{
-    types = environments @ function_enums @ closure_structs;
-    (* procedures = application_procedures ; *)
-    procedures = [] ;
-    main = [] ;
-  }
