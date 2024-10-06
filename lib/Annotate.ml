@@ -12,7 +12,6 @@ type 'a environment = (S.identifier, 'a) binding list
 
 (* factor out *)
 let lookup (gamma : S.ty environment) (id : S.identifier) =
-  let open S in
   let predicate binding = String.(=) id binding.name in
   let projection binding = binding.value in
   Option.map (List.find gamma ~f:predicate) ~f:projection

@@ -138,7 +138,7 @@ let type_definition name = function
       sprintf "struct %s { %s };" name (concat_map bindings declare " ")
   | Union bindings ->
       sprintf "union %s { %s };" name (concat_map bindings declare " ")
-  | Alias t -> ""
+  | Alias _ -> ""
 
 let render_procedure { name ; value = proc } =
 

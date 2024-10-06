@@ -4,15 +4,6 @@ open Prelude
 module S = TAC (* source *)
 module T = Cmm (* target *)
 
-type 'a table = (STLC.ty, 'a, STLC.Ty.comparator_witness) Map.t
-
-(*
-type compilation = {
-  statements : T.statement list ;
-  value : T.expression ;
-}
-*)
-
 let allocation_pointer = "aptr"
 
 let register_name = function
@@ -50,7 +41,6 @@ let compile_program source =
   let type_name index     = sprintf "T%d" index in
   let env_name index      = sprintf "F%d" index in
   let type_tag_name index = sprintf "T%dTag" index in
-  let function_name index = sprintf "f%d" index in
   let enum_item_name type_index function_index =
     sprintf "%s_%s" (type_name type_index) (env_name function_index) in
   let application_name index = sprintf "apply_t%d" index in
@@ -58,19 +48,18 @@ let compile_program source =
   let atomic_type t =
     match t with
     | STLC.Z64 -> T.TypeSymbol "int64_t"
-    | STLC.Arrow (domain, codomain) ->
-        T.TypeSymbol (type_name (lookup_type_index t)) in
+    | STLC.Arrow _ -> T.TypeSymbol (type_name (lookup_type_index t)) in
 
   (* map from function index to environment type *)
   let environment_map =
 
-    let environment S.{ env ; arg ; body = _ ; return_type = _ } =
+    let environment def =
       let atomicize { name ; value } = { name ; value = atomic_type value } in
       let reference_counter = {
         name = "rc" ;
         value = T.TypeSymbol "int64_t" ;
       } in
-      T.Structure (reference_counter :: (List.map env ~f:atomicize)) in
+      T.Structure (reference_counter :: (List.map def.S.env ~f:atomicize)) in
 
     Map.map source.S.functions ~f:environment in
 
@@ -122,9 +111,6 @@ let compile_program source =
     let kvs = List.map function_types ~f:associate_functions in
     Map.of_alist_exn (module STLC.Ty) kvs in
 
-  (* lookup the functions inhabiting a type in the above map *)
-  let lookup_type_functions = Map.find_exn type_to_functions in
-
   (* a map from each function type index to the list of functions inhabiting it *)
   let type_index_to_functions =
     Map.map_keys_exn (module Int) type_to_functions ~f:lookup_type_index in
@@ -166,7 +152,7 @@ let compile_program source =
     let compile_expression = function
       | S.Lit i -> T.Lit i
       | S.Bin (op, lhs, rhs) -> T.Bin (compile_op op, ass lhs, ass rhs)
-      | S.Closure (fidx, args) -> failwith "UNREACHABLE"
+      | S.Closure _ -> failwith "UNREACHABLE"
       | S.Call (f, x) ->
           let ft_index' = lookup_type_index (register_type f) in
           T.Call (application_name ft_index', [ ass f ; ass x ]) in

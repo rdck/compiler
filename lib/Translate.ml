@@ -3,7 +3,6 @@
 (******************************************************************************)
 
 open Core
-open Prelude
 
 module S = Lifted (* source *)
 module T = TAC    (* target *)

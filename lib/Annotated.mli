@@ -2,8 +2,6 @@
 (* ANNOTATED LAMBDA CALCULUS *)
 (******************************************************************************)
 
-open Core
-
 type identifier = string
 [@@deriving equal, show]
 

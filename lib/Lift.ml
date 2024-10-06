@@ -22,7 +22,6 @@ let rec free_vars gamma S.{ expr ; note = _ } =
 
 (* factor out *)
 let lookup gamma id =
-  let open STLC in
   let predicate binding = String.(=) id binding.name in
   let projection binding = binding.value in
   Option.map (List.find gamma ~f:predicate) ~f:projection
@@ -81,10 +80,7 @@ let lift term =
     | S.Abs (name, body) ->
         let binding = { name ; value = STLC.project_domain_exn note } in
         let fvs = free_vars [name] body in
-        let bind id = STLC.{
-          name = id ;
-          value = lookup_exn gamma id ;
-        } in
+        let bind id = { name = id ; value = lookup_exn gamma id ; } in
         let variable id = T.{
           expr = var id ;
           note = lookup_exn gamma id

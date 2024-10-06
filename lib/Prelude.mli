@@ -1,5 +1,3 @@
-open Core
-
 type ('k, 'v) binding = {
   name  : 'k ;
   value : 'v ;

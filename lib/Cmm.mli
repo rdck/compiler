@@ -2,7 +2,6 @@
 (* PRIMTIVE C *)
 (******************************************************************************)
 
-open Core
 open Prelude
 
 type identifier = string
