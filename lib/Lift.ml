@@ -40,6 +40,7 @@ let lift term =
   let empty = Map.empty (module Int) in
 
   let rec process arg gamma S.{ expr ; note } =
+    let var id = if String.equal id arg then T.Var T.Arg else T.Var (T.Env id) in
     match expr with
     | S.Lit i ->
         T.{
@@ -63,7 +64,7 @@ let lift term =
         T.{
           functions = empty ;
           body = {
-            expr = if String.equal id arg then Var Arg else Var (Env id) ;
+            expr = var id ;
             note = note ;
           }
         }
@@ -85,7 +86,7 @@ let lift term =
           value = lookup_exn gamma id ;
         } in
         let variable id = T.{
-          expr = Var (Env id) ;
+          expr = var id ;
           note = lookup_exn gamma id
         } in
         let T.{ functions = bf ; body = be } = process name (binding::gamma) body in

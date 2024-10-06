@@ -14,7 +14,7 @@ let recursion =
   let twice = abs "f" (arrow Z64 Z64) (
     abs "x" Z64 (app (var "f") (app (var "f") (var "x")))
   ) in
-  let add_one = abs "x" Z64 (bin Add (var "x") (lit 1)) in
+  let add_one = abs "x" Z64 (bin Add (var "x") (lit 3)) in
   app (app twice add_one) (lit 0)
 
 let ztz = Arrow (Z64, Z64)
