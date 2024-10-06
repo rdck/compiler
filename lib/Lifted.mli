@@ -17,10 +17,15 @@ type index = int
 type ty = STLC.ty
 [@@deriving equal, show]
 
+type variable =
+  | Arg
+  | Env of identifier
+[@@deriving equal, show]
+
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
-  | Var of identifier
+  | Var of variable
   | Closure of index * 'a expression list
   | App of 'a expression * 'a expression
 and 'a expression = {

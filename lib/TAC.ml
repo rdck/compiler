@@ -19,12 +19,14 @@ type binop = STLC.binop
 
 type register =
   | Reg of index
-  | Var of identifier
+  | Arg
+  | Env of identifier
 [@@deriving equal]
 
 let show_register = function
   | Reg id -> sprintf "r%d" id
-  | Var id -> id
+  | Arg -> "arg"
+  | Env id -> sprintf "env.%s" id
 
 let pp_register f r = Format.fprintf f "%s" (show_register r)
 

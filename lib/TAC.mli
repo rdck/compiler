@@ -19,7 +19,8 @@ type binop = STLC.binop
 
 type register =
   | Reg of index
-  | Var of identifier
+  | Arg
+  | Env of identifier
 [@@deriving equal, show]
 
 type expression =

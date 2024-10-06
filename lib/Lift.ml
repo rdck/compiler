@@ -39,7 +39,7 @@ let lift term =
     out in
   let empty = Map.empty (module Int) in
 
-  let rec process gamma S.{ expr ; note } =
+  let rec process arg gamma S.{ expr ; note } =
     match expr with
     | S.Lit i ->
         T.{
@@ -50,8 +50,8 @@ let lift term =
           }
         }
     | S.Bin (op, lhs, rhs) ->
-        let T.{ functions = lhsf ; body = lhse } = process gamma lhs in
-        let T.{ functions = rhsf ; body = rhse } = process gamma rhs in
+        let T.{ functions = lhsf ; body = lhse } = process arg gamma lhs in
+        let T.{ functions = rhsf ; body = rhse } = process arg gamma rhs in
         T.{
           functions = Map.merge_disjoint_exn lhsf rhsf ;
           body = {
@@ -63,13 +63,13 @@ let lift term =
         T.{
           functions = empty ;
           body = {
-            expr = Var id ;
+            expr = if String.equal id arg then Var Arg else Var (Env id) ;
             note = note ;
           }
         }
     | S.App (f, x) ->
-        let T.{ functions = ff ; body = fe } = process gamma f in
-        let T.{ functions = xf ; body = xe } = process gamma x in
+        let T.{ functions = ff ; body = fe } = process arg gamma f in
+        let T.{ functions = xf ; body = xe } = process arg gamma x in
         T.{
           functions = Map.merge_disjoint_exn ff xf ;
           body = {
@@ -78,17 +78,17 @@ let lift term =
           }
         }
     | S.Abs (name, body) ->
-        let binding = STLC.{ name ; value = STLC.project_domain_exn note } in
+        let binding = { name ; value = STLC.project_domain_exn note } in
         let fvs = free_vars [name] body in
         let bind id = STLC.{
           name = id ;
           value = lookup_exn gamma id ;
         } in
         let variable id = T.{
-          expr = Var id ;
+          expr = Var (Env id) ;
           note = lookup_exn gamma id
         } in
-        let T.{ functions = bf ; body = be } = process (binding::gamma) body in
+        let T.{ functions = bf ; body = be } = process name (binding::gamma) body in
         let def = T.{
           env = List.map fvs ~f:bind ;
           arg = binding ;
@@ -103,4 +103,4 @@ let lift term =
           }
         }
 
-  in process [] term
+  in process "" [] term

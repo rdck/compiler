@@ -109,7 +109,8 @@ let compile_program source =
 
   let register_name = function
     | S.Reg idx -> sprintf "r%d" idx
-    | S.Var id -> id in
+    | S.Arg -> "arg"
+    | S.Env id -> sprintf "env->%s" id (* hack *) in
 
   let compile_op = function
     | STLC.Add -> T.Add
@@ -142,11 +143,8 @@ let compile_program source =
           if String.equal id name then Some value else None in
         let get_register_type = function
           | S.Reg _ as r -> List.find_map_exn fdef.S.body ~f:(filter_store_register r)
-          | S.Var id ->
-              begin match List.find_map fdef.S.env ~f:(filter_arg_type id) with
-              | Some t -> t
-              | None -> domain
-              end in
+          | S.Arg -> domain
+          | S.Env id -> List.find_map_exn fdef.S.env ~f:(filter_arg_type id) in
 
         let compile_expression = function
           | S.Lit i -> T.Lit i
@@ -191,16 +189,13 @@ let compile_program source =
                 [ register_decl ; assignment ]
             | S.Return r -> [T.Return (T.Assignable (T.Var (register_name r)))] in
 
-        let arg_decl = T.Declare (fdef.S.arg.name, atomic_type domain) in
-        let arg_def = T.Assign (
-          T.Var fdef.S.arg.name,
-          T.Assignable (T.Var "arg")
-        ) in
+        let env_decl = T.Declare ("env", Pointer (TypeSymbol (env_name fidx))) in
+        let env_defi = T.Assign (T.Var "env", T.Assignable (T.Var "fp.env")) (* hack *) in
+        let body = List.concat (List.map fdef.S.body compile_instruction) in
 
         T.{
           tag = T.Assignable (T.Var (enum_item_name ft_index fidx)) ;
-          body = arg_decl :: arg_def
-          :: List.concat (List.map fdef.S.body compile_instruction) ;
+          body = env_decl :: env_defi :: body ;
         } in
 
       let cases = List.map functions ~f:to_case in
@@ -221,77 +216,11 @@ let compile_program source =
 
     List.map function_types ~f:apply_procedure in
 
+  let main = [] in
+    (* List.map source.S.body ~f: *)
+
   T.{
     types = function_enums @ closure_structs @ environments;
     procedures = apply_procedures ;
-    main = [] ;
+    main = main ;
   }
-
-  (*
-
-  let register_name = function
-    | S.Reg idx -> sprintf "r%d" idx
-    | S.Var id -> id in
-
-  let compile_op = function
-    | STLC.Add -> T.Add
-    | STLC.Sub -> T.Sub
-    | STLC.Mul -> T.Mul
-    | STLC.Exp -> failwith "TODO: exponentiation" in
-
-  let var r = T.Var (register_name r) in
-
-  let compile_expression = function
-    | S.Lit i -> T.Lit i
-    | S.Bin (op, lhs, rhs) ->
-        T.Bin (compile_op op, var lhs, var rhs)
-    | S.Closure (fidx, args) -> failwith ""
-    | _ -> failwith "" in
-
-  (* @rdk: this should just match on the value expression to handle the closure case *)
-  let compile_instruction = function
-    | S.Store (dest, t, value) ->
-        let name = register_name dest in
-        let declaration = T.Declare (name, atomic_type t) in
-        let assignment = T.Assign (T.Var name, compile_expression value) in
-        [ declaration ; assignment ]
-    | _ -> failwith "" in
-  
-  let compile_instructions instructions =
-    List.concat (List.map instructions ~f:compile_instruction) in
-
-  (* the `apply` function for each function type *)
-  let application_procedures =
-
-    (* generate the `apply` function for a given function type *)
-    let application_procedure function_type =
-
-      let type_index = lookup_type_index function_type in
-      let procedure_id = application_name type_index in
-
-      let procedure =
-
-        let to_case fidx =
-          let definition = Map.find_exn source.S.functions fidx in
-          T.{
-            tag = T.Var (enum_item_name type_index fidx) ;
-            body = compile_instructions definition.S.body ;
-          } in
-
-        let cases = List.map (lookup_type_functions function_type) ~f:to_case in
-        let switch_statement = T.Switch (T.Arrow (T.Var "fp", T.Var "tag"), cases) in
-
-        T.{
-          arg = {
-            name = "fp" ;
-            value = T.Pointer (T.TypeSymbol (type_name type_index)) ;
-          } ;
-          body = [ switch_statement ] ;
-          return_type = atomic_type (STLC.project_codomain_exn function_type) ;
-        } in
-
-      { name = procedure_id ; value = procedure } in
-
-    List.map function_types ~f:application_procedure in
-
-  *)

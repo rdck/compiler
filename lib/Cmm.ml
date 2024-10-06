@@ -153,13 +153,23 @@ let render_procedure { name ; value = proc } =
 
 let represent { types ; procedures ; main } =
 
+  let prelude_items = [
+    "#include <stdint.h>" ;
+    "#include <stdlib.h>" ;
+    "#include <stdio.h>" ;
+  ] in
+  let prelude = String.concat prelude_items ~sep:"\n" in
   let type_declaration' { name ; value } = type_declaration name value in
   let type_definition' { name ; value } = type_definition name value in
   let type_declarations = concat_map types type_declaration' "\n" in
   let type_definitions = concat_map types type_definition' "\n" in
   let procedures' = concat_map procedures render_procedure "\n\n" in
+  let main_body = concat_map main render_statement "\n" in
+  let main' = sprintf "int64_t lambda_main() {\n%s\n}" main_body in
   String.concat [
+    prelude ;
     type_declarations ;
     type_definitions ;
     procedures' ;
+    main' ;
 ] ~sep:"\n\n"

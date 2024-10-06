@@ -40,8 +40,10 @@ let compile_program S.{ functions ; body } =
             code = lhc @ rhc @ [ T.Store (sym, STLC.Z64, T.Bin (op, lhr, rhr)) ] ;
             reg = sym ;
           }
-      | S.Var id ->
-          { code = [] ; reg = T.Var id }
+      | S.Var S.Arg ->
+          { code = [] ; reg = T.Arg }
+      | S.Var (S.Env id) ->
+          { code = [] ; reg = T.Env id }
       | S.Closure (idx, args) ->
           let compiled_args = List.map args ~f:compile in
           let codes = List.map compiled_args ~f:project_code in

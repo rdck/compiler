@@ -17,10 +17,21 @@ type index = int
 type ty = STLC.ty
 [@@deriving equal, show]
 
+type variable =
+  | Arg
+  | Env of identifier
+[@@deriving equal]
+
+let show_variable = function
+  | Arg -> "arg"
+  | Env id -> sprintf "env.%s" id
+
+let pp_variable f v = Format.fprintf f "%s" (show_variable v)
+
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
-  | Var of identifier
+  | Var of variable
   | Closure of index * 'a expression list
   | App of 'a expression * 'a expression
 and 'a expression = {
@@ -59,7 +70,8 @@ module Term = struct
     | Bin (Sub, _, _) -> " - "
     | Bin (Mul, _, _) -> " * "
     | Bin (Exp, _, _) -> " ^ "
-    | Var id -> id
+    | Var Arg -> "arg"
+    | Var (Env id) -> sprintf "env.%s" id
     | App _ -> " "
     | Closure (idx, _) -> sprintf "f%d" idx
 
