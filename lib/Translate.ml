@@ -73,5 +73,7 @@ let compile_program S.{ functions ; body } =
 
   T.{
     functions = Map.map functions ~f:compile_definition ;
-    body = (compile_expression body).code ;
+    body =
+      let { code ; reg } = compile_expression body in
+      code @ [ T.Return reg ] ;
   }
