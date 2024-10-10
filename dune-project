@@ -17,8 +17,8 @@
 
 (package
  (name compiler)
- (synopsis "recurse center compiler")
+ (synopsis "Recurse Center compiler experiments")
  (description "")
- (depends ocaml dune core)
+ (depends ocaml dune core (alcotest :with-test))
  (tags
   (compiler "programming language")))
