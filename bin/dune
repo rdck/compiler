@@ -1,9 +1,9 @@
 (executable
  (public_name compiler)
- (name main)
+ (name driver)
  (libraries compiler core_unix.command_unix)
  (preprocess (pps ppx_jane ppx_deriving.show))
- (modules Main)
+ (modules Driver)
 )
 
 (executable

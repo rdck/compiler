@@ -1,6 +1,6 @@
 open Compiler
 open Token
-open Parse
+open RecursiveDescent
 
 let test_z64 () =
   let status = match parse_type [ Z64 ] with

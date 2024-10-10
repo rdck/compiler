@@ -60,3 +60,9 @@ and parse_subexpr tokens =
       let%bind { result = f ; remaining } = parse_expr remaining in
       let%bind { result = x ; remaining } = parse_expr remaining in
       ret (T.App (f, x)) remaining
+
+let parse_program tokens =
+  let open Option.Let_syntax in
+  let%bind { result ; remaining } = parse_expr tokens in
+  let%bind remaining = consume EOF remaining in
+  return result

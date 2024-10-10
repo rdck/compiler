@@ -17,7 +17,7 @@
    CmmBackend
    Lex
    Token
-   Parse
+   RecursiveDescent
    )
  )
 

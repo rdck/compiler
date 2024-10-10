@@ -1,4 +1,4 @@
 (tests
  (libraries core compiler alcotest)
  (preprocess (pps ppx_jane ppx_deriving.show))
- (names TestParser))
+ (names RecursiveDescent))
