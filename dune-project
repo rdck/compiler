@@ -19,6 +19,6 @@
  (name compiler)
  (synopsis "Recurse Center compiler experiments")
  (description "")
- (depends ocaml dune core (alcotest :with-test))
+ (depends ocaml dune core core_unix (alcotest :with-test))
  (tags
   (compiler "programming language")))

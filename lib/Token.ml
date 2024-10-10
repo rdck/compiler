@@ -14,4 +14,4 @@ type token =
   | ShutParen
   | Identifier of string
   | Literal of int
-[@@deriving equal]
+[@@deriving equal, show]

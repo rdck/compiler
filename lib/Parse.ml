@@ -29,6 +29,7 @@ let rec parse_expr tokens =
   let ret result remaining = return { result ; remaining } in
   match tokens with
   | Literal i :: rest -> ret (T.Lit i) rest
+  | Identifier id :: rest -> ret (T.Var id) rest
   | OpenParen :: rest ->
       let%bind { result ; remaining } = parse_subexpr rest in
       let%bind rest = consume ShutParen remaining in
