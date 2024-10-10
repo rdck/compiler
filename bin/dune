@@ -6,6 +6,14 @@
  (modules Main)
 )
 
+(executable
+ (public_name lexer)
+ (name LexerMain)
+ (libraries compiler)
+ (preprocess (pps ppx_deriving.show ppx_compare ppx_let))
+ (modules LexerMain)
+)
+
 (env
  (dev
   (flags

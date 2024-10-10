@@ -15,8 +15,17 @@
    Example
    Cmm
    CmmBackend
+   Lex
+   Token
+   Parse
    )
  )
+
+(rule
+ (target Lex.ml)
+ (deps   Lex.mll)
+ (action (chdir %{workspace_root}
+          (run %{bin:ocamllex} -q -o %{target} %{deps}))))
 
 (env
  (dev
