@@ -1,4 +1,11 @@
 (tests
  (libraries core compiler alcotest)
  (preprocess (pps ppx_jane ppx_deriving.show))
- (names RecursiveDescent))
+ (names RecursiveDescent Pratt))
+
+(env
+ (dev
+  (flags
+   (:standard -w -unused-open)
+   (:standard -warn-error -A)
+)))

@@ -1,7 +1,8 @@
 open Core
 
 type token =
-  | EOF
+  | Identifier of string
+  | Literal of int
   | Plus
   | Minus
   | Star
@@ -12,6 +13,5 @@ type token =
   | Z64
   | OpenParen
   | ShutParen
-  | Identifier of string
-  | Literal of int
+  | EOF
 [@@deriving equal, show]
