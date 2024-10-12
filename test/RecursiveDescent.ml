@@ -1,25 +1,35 @@
 open Compiler
-open Token
 open RecursiveDescent
+open Core
 
-let test_z64 () =
-  let status = match parse_type [ Z64 ] with
-  | Some { result = STLC.Z64 ; remaining = [] } -> true
-  | _ -> false in
-  Alcotest.(check bool) "z64" status true
+module T = Alcotest
 
-let test_z64_arrow_z64 () =
-  let tokens = [ OpenParen ; Z64 ; Arrow ; Z64 ; ShutParen ] in
-  let status = match parse_type tokens with
-  | Some { result = STLC.Arrow (STLC.Z64, STLC.Z64) ; remaining = [] } -> true
-  | _ -> false in
-  Alcotest.(check bool) "z64 -> z64" status true
+let project_result p = p.result
+
+let tokenize_string =
+  Fn.compose Lex.tokenize Lexing.from_string
+
+let test_case_for_type input expect =
+
+  let check_type name input expect =
+    let testable_type = T.option @@ T.testable STLC.pp_ty [%equal: STLC.ty] in
+    let tokens = tokenize_string input in
+    let parsed = Option.map (parse_type tokens) ~f:project_result in
+    T.check testable_type name parsed expect in
+
+  T.test_case input `Quick (fun () ->
+    check_type input input expect
+  )
 
 let () =
-  let open Alcotest in
-  run "parser" [
+
+  T.run "pure recursive descent parser" [
+
     "parse_type", [
-      test_case "z64" `Quick test_z64 ;
-      test_case "z64 -> z64" `Quick test_z64_arrow_z64 ;
+
+      test_case_for_type "Z64" @@ Some STLC.Z64 ;
+      test_case_for_type "(Z64 -> Z64)" @@ Some STLC.(Arrow (Z64, Z64)) ;
+
     ] ;
+
   ]

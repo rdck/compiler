@@ -19,6 +19,8 @@ let pp_binding fk fv f b =
 type ('k, 'v) bindings = ('k, 'v) binding list
 [@@deriving equal, show]
 
+let binding k v = { name = k ; value = v }
+
 let project_name binding = binding.name
 let project_value binding = binding.value
 
