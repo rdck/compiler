@@ -12,6 +12,27 @@ let consume token = function
   | t :: ts -> if [%equal:token] t token then Some ts else None
   | _ -> None
 
+let rec parse_type tokens =
+
+  let open Option.Let_syntax in
+  let ret result rest = return { result ; rest } in
+
+  let parse_atom = function
+    | OpenParen :: rest ->
+        let%bind { result ; rest } = parse_type rest in
+        let%bind rest = consume ShutParen rest in
+        ret result rest
+    | Z64 :: rest -> ret STLC.Z64 rest
+    | _ -> None in
+
+  let%bind { result = lhs ; rest } = parse_atom tokens in
+  let rhs =
+    let%bind rest = consume Arrow rest in
+    parse_type rest in
+  match rhs with
+  | Some { result = rhs ; rest } -> ret (STLC.Arrow (lhs, rhs)) rest
+  | None -> ret lhs rest
+
 let rec parse_precedence p tokens =
 
   let open Option.Let_syntax in
@@ -26,9 +47,17 @@ let rec parse_precedence p tokens =
     | Literal l :: rest -> ret (T.Lit l) rest
     | _ -> None in
 
-  let%bind { result = lhs ; rest } = parse_atom tokens in
-  let { result ; rest } = loop p lhs rest in
-  ret result rest
+  (* function keyword *)
+  match tokens with
+  | Lambda :: Identifier id :: Colon :: rest ->
+      let%bind { result = t ; rest } = parse_type rest in
+      let%bind rest = consume Period rest in
+      let%bind { result = e ; rest } = parse_precedence 1 rest in
+      ret STLC.(Abs ({ name = id ; value = t }, e)) rest
+  | _ ->
+      let%bind { result = lhs ; rest } = parse_atom tokens in
+      let { result ; rest } = loop p lhs rest in
+      ret result rest
 
 and loop p lhs rest =
 
