@@ -6,7 +6,7 @@ let compile path =
   | true ->
       let content = In_channel.read_all path in
       let lexed = Lex.tokenize (Lexing.from_string content) in
-      let parsed = Option.value_exn (RecursiveDescent.parse_program lexed) in
+      let parsed = Option.value_exn (Pratt.parse_program lexed) in
       let compiled = parsed
         |> Annotate.annotate_exn
         |> Lift.lift
