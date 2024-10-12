@@ -111,5 +111,5 @@ let parse = parse_precedence 0
 let parse_program tokens =
   let open Option.Let_syntax in
   let%bind { result ; rest } = parse tokens in
-  let%bind rest = consume EOF rest in
+  let%bind _ = consume EOF rest in
   return result

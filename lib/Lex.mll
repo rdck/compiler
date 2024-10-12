@@ -1,5 +1,4 @@
 {
-open Printf
 open Token
 open Core
 }

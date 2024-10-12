@@ -64,5 +64,5 @@ and parse_subexpr tokens =
 let parse_program tokens =
   let open Option.Let_syntax in
   let%bind { result ; remaining } = parse_expr tokens in
-  let%bind remaining = consume EOF remaining in
+  let%bind _ = consume EOF remaining in
   return result
