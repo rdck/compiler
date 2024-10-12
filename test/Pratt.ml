@@ -112,5 +112,31 @@ let () =
         verify "λ x : Z64 . x + x" parsed (Some expect)
       ) ;
 
+      test_case "f x" `Quick (fun () ->
+        let tokens = [ Identifier "f" ; Identifier "x" ] in
+        let parsed = Option.map (parse tokens) ~f:(fun p -> p.result) in
+        let expect = STLC.(App (Var "f", Var "x")) in
+        verify "f x" parsed (Some expect)
+      ) ;
+
+      test_case "f x y" `Quick (fun () ->
+        let tokens = [ Identifier "f" ; Identifier "x" ; Identifier "y" ] in
+        let parsed = Option.map (parse tokens) ~f:(fun p -> p.result) in
+        let expect = STLC.(App (App (Var "f", Var "x"), Var "y")) in
+        verify "f x y" parsed (Some expect)
+      ) ;
+
+      test_case "a * f x" `Quick (fun () ->
+        let tokens = [
+          Identifier "a" ;
+          Star ;
+          Identifier "f" ;
+          Identifier "x" ;
+        ] in
+        let parsed = Option.map (parse tokens) ~f:(fun p -> p.result) in
+        let expect = STLC.(Bin (Mul, Var "a", App (Var "f", Var "x"))) in
+        verify "a * f x" parsed (Some expect)
+      ) ;
+
     ] ;
   ]

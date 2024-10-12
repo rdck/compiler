@@ -85,6 +85,15 @@ and loop p lhs rest =
           Option.value looped ~default
       | false -> default
       end
-  | _ -> default
+  | _ ->
+      let p' = 5 in
+      begin match p' > p with
+      | true ->
+          let looped =
+            let%bind { result = rhs ; rest } = parse_precedence p' rest in
+            return @@ loop p (T.App (lhs, rhs)) rest in
+          Option.value looped ~default
+      | false -> default
+      end
 
 let parse = parse_precedence 0
