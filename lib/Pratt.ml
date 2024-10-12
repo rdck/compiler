@@ -75,6 +75,16 @@ and loop p lhs rest =
           Option.value looped ~default
       | false -> default
       end
+  | Minus :: rest' ->
+      let p' = 2 in
+      begin match p' > p with
+      | true ->
+          let looped =
+            let%bind { result = rhs ; rest } = parse_precedence p' rest' in
+            return @@ loop p (T.Bin (T.Sub, lhs, rhs)) rest in
+          Option.value looped ~default
+      | false -> default
+      end
   | Star :: rest' ->
       let p' = 3 in
       begin match p' > p with
