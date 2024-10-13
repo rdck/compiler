@@ -27,7 +27,7 @@ let test_case_for_expr input expect =
   let check_expr name input expect =
     let testable_expr = T.option @@ T.testable STLC.pp_expression [%equal: STLC.expression] in
     let tokens = tokenize_string input in
-    let parsed = Option.map (parse tokens) ~f:project_result in
+    let parsed = Option.map (parse_expression tokens) ~f:project_result in
     T.check testable_expr name parsed expect in
 
   T.test_case input `Quick (fun () ->
