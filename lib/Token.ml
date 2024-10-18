@@ -10,7 +10,6 @@ type token =
   | Colon
   | Arrow
   | Lambda
-  | Z64
   | OpenParen
   | ShutParen
   | EOF

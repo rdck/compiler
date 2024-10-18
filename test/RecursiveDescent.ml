@@ -27,8 +27,8 @@ let () =
 
     "parse_type", [
 
-      test_case_for_type "Z64" @@ Some STLC.Z64 ;
-      test_case_for_type "(Z64 -> Z64)" @@ Some STLC.(Arrow (Z64, Z64)) ;
+      test_case_for_type "Z64" @@ Some STLC.z64 ;
+      test_case_for_type "(Z64 -> Z64)" @@ Some STLC.(Arrow (z64, z64)) ;
 
     ] ;
 

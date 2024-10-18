@@ -24,7 +24,7 @@ let rec parse_type tokens =
         let%bind { result ; rest } = parse_type rest in
         let%bind rest = consume ShutParen rest in
         return_parse result rest
-    | Z64 :: rest -> return_parse T.Z64 rest
+    | Identifier id :: rest -> return_parse (T.TypeSymbol id) rest
     | _ -> None in
 
   let%bind { result = lhs ; rest } = parse_atom tokens in

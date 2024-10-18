@@ -22,8 +22,6 @@ rule lex = parse
   | "λ"     { Lambda      }
   | "->"    { Arrow       }
   | "→"     { Arrow       }
-  | "Z64"   { Z64         }
-  | "ℤ64"   { Z64         }
 
   | digits as d { Literal (Int.of_string d) }
   | id as id { Identifier id }

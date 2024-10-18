@@ -22,12 +22,13 @@ let rec synthesize gamma expression =
   let annotate x t = { T.expr = x ; T.note = t } in
   let return x t = Option.return (annotate x t) in
   match expression with
-  | Lit i -> return (Lit i) Z64
+  | Lit i -> return (Lit i) z64
   | Bin (op, lhs, rhs) ->
       let%bind { expr = _ ; note = lht } as lhs' = synthesize gamma lhs in
       let%bind { expr = _ ; note = rht } as rhs' = synthesize gamma rhs in
       begin match (lht, rht) with
-      | (Z64, Z64) -> return (Bin (op, lhs', rhs')) Z64
+      (* STLC should expose Z64 identifier *)
+      | (TypeSymbol "z64", TypeSymbol "z64") -> return (Bin (op, lhs', rhs')) z64
       | _ -> None
       end
   | Var id -> Option.map (lookup gamma id) ~f:(annotate (Var id))

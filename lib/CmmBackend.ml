@@ -56,8 +56,13 @@ let compile_program source =
   let lookup_type_index = Map.find_exn type_to_index in
 
   let atomic_type t =
+
+    let translate_type_symbol = function
+      | "z64" -> name_z64 (* TODO: standardize builtin type strings *)
+      | id -> id in
+
     match t with
-    | STLC.Z64 -> T.TypeSymbol name_z64
+    | STLC.TypeSymbol id -> T.TypeSymbol (translate_type_symbol id)
     | STLC.Arrow _ -> T.TypeSymbol (name_type (lookup_type_index t)) in
 
   (* map from function index to environment type *)

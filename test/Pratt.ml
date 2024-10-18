@@ -40,14 +40,14 @@ let () =
 
     "parse_type", [
 
-      test_case_for_type "Z64" @@ Some STLC.Z64 ;
+      test_case_for_type "Z64" @@ Some STLC.z64 ;
 
       test_case_for_type "Z64 -> Z64 -> Z64" @@ Some STLC.(
-        Arrow (Z64, Arrow (Z64, Z64))
+        Arrow (z64, Arrow (z64, z64))
       ) ;
 
       test_case_for_type "(Z64 -> Z64) -> Z64" @@ Some STLC.(
-        Arrow (Arrow (Z64, Z64), Z64)
+        Arrow (Arrow (z64, z64), z64)
       ) ;
 
     ] ;
@@ -71,11 +71,11 @@ let () =
       ) ;
 
       test_case_for_expr "λ x : Z64 . x" @@ Some STLC.(
-        Abs ({ name = "x" ; value = Z64 }, Var "x")
+        Abs ({ name = "x" ; value = z64 }, Var "x")
       ) ;
 
       test_case_for_expr "λ x : Z64 . x + x" @@ Some STLC.(
-        Abs ({ name = "x" ; value = Z64 }, Bin (Add, Var "x", Var "x"))
+        Abs ({ name = "x" ; value = z64 }, Bin (Add, Var "x", Var "x"))
       ) ;
 
       test_case_for_expr "f x" @@ Some STLC.(
@@ -92,7 +92,7 @@ let () =
 
       test_case_for_expr "λ f : Z64 -> Z64 . λ x : Z64 . f (f x)" @@ Some STLC.(
         let body = App (Var "f", App (Var "f", Var "x")) in
-        Abs (binding "f" (Arrow (Z64, Z64)), Abs (binding "x" Z64, body))
+        Abs (binding "f" (Arrow (z64, z64)), Abs (binding "x" z64, body))
       ) ;
 
     ] ;

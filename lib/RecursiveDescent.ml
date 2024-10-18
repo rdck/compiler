@@ -15,7 +15,7 @@ let rec parse_type tokens =
   let open Option.Let_syntax in
   let ret result remaining = return { result ; remaining } in
   match tokens with
-  | Z64 :: rest -> ret T.Z64 rest
+  | Identifier id :: rest -> ret (T.TypeSymbol id) rest
   | OpenParen :: rest ->
       let%bind { result = domain ; remaining } = parse_type rest in
       let%bind rest = consume Arrow remaining in
