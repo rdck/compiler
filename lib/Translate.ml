@@ -3,6 +3,7 @@
 (******************************************************************************)
 
 open Core
+open Types
 
 module S = Lifted (* source *)
 module T = TAC    (* target *)
@@ -29,14 +30,14 @@ let compile_program S.{ functions ; body } =
       match expr with
       | S.Lit i ->
           let sym = gensym () in {
-            code = T.[ Store (sym, STLC.z64, Lit i) ] ;
+            code = T.[ Store (sym, z64, Lit i) ] ;
             reg = sym ;
           }
       | S.Bin (op, lhs, rhs) ->
           let { code = lhc ; reg = lhr } = compile lhs in
           let { code = rhc ; reg = rhr } = compile rhs in
           let sym = gensym () in {
-            code = lhc @ rhc @ T.[ Store (sym, STLC.z64, Bin (op, lhr, rhr)) ] ;
+            code = lhc @ rhc @ T.[ Store (sym, z64, Bin (op, lhr, rhr)) ] ;
             reg = sym ;
           }
       | S.Var S.Arg ->

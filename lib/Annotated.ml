@@ -3,11 +3,10 @@
 (******************************************************************************)
 
 open Core
+open Types
+open Prelude
 
 type identifier = STLC.identifier
-[@@deriving equal, show]
-
-type ty = STLC.ty
 [@@deriving equal, show]
 
 type binop = STLC.binop
@@ -24,3 +23,11 @@ and 'a expression = {
   note : 'a ;
 }
 [@@deriving equal, show]
+
+type value = ty expression
+[@@deriving equal, show]
+
+type program = {
+  types : (identifier, type_specifier) bindings ;
+  values : (identifier, value) bindings ;
+}

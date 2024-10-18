@@ -4,51 +4,10 @@
 
 open Core
 open Prelude
+open Types
 
 type identifier = string
 [@@deriving equal, compare, sexp, show]
-
-type ty =
-  | TypeSymbol of identifier
-  | Arrow of ty * ty
-[@@deriving equal, compare, sexp]
-
-let show_ty =
-  let rec show p = function
-    | TypeSymbol id -> id
-    | Arrow (dom, cod) ->
-        let dom' = show true dom in
-        let cod' = show false cod in
-        let s = sprintf "%s -> %s" dom' cod' in
-        if p then sprintf "(%s)" s else s in
-  show false
-
-let pp_ty f t = Format.fprintf f "%s" (show_ty t)
-
-let z64 = TypeSymbol "z64"
-
-type constructor = {
-  name : identifier ;
-  parameter : ty ;
-}
-[@@deriving equal, show]
-
-type type_body = constructor list
-[@@deriving equal, show]
-
-module Ty = struct
-
-  module T = struct
-
-    type t = ty
-    [@@deriving compare, sexp]
-
-  end
-
-  include T
-  include Comparable.Make(T)
-
-end
 
 type binop =
   | Add
@@ -157,6 +116,6 @@ let project_codomain_exn =
   Fn.compose value_exn project_codomain
 
 type program = {
-  types : (identifier, type_body) bindings ;
+  types : (identifier, type_specifier) bindings ;
   values : (identifier, expression) bindings ;
 }

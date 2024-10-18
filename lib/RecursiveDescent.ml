@@ -1,5 +1,6 @@
 open Core
 open Token
+open Types
 module T = STLC (* target *)
 
 type 't parse = {
@@ -15,13 +16,13 @@ let rec parse_type tokens =
   let open Option.Let_syntax in
   let ret result remaining = return { result ; remaining } in
   match tokens with
-  | Identifier id :: rest -> ret (T.TypeSymbol id) rest
+  | Identifier id :: rest -> ret (TypeSymbol id) rest
   | OpenParen :: rest ->
       let%bind { result = domain ; remaining } = parse_type rest in
       let%bind rest = consume Arrow remaining in
       let%bind { result = codomain ; remaining } = parse_type rest in
       let%bind rest = consume ShutParen remaining in
-      ret (STLC.Arrow (domain, codomain)) rest
+      ret (Arrow (domain, codomain)) rest
   | _ -> None
 
 let rec parse_expr tokens =

@@ -2,9 +2,9 @@
 (* STLC -> ANNOTATED *)
 (******************************************************************************)
 
-open Annotated
+open Types
 
-val annotate : STLC.expression -> ty expression option
-val annotate_exn : STLC.expression -> ty expression
+val annotate : STLC.program -> Annotated.program option
+val annotate_exn : STLC.program -> Annotated.program
 
-val forget_exn : ty expression -> STLC.expression
+val forget_exn : ty Annotated.expression -> STLC.expression

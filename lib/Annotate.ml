@@ -4,6 +4,7 @@
 
 open Core
 open Prelude
+open Types
 
 module S = STLC       (* source *)
 module T = Annotated  (* target *)
@@ -11,8 +12,8 @@ module T = Annotated  (* target *)
 type 'a environment = (S.identifier, 'a) binding list
 
 (* factor out *)
-let lookup (gamma : S.ty environment) (id : S.identifier) =
-  let predicate binding = String.(=) id binding.name in
+let lookup (gamma : ty environment) (id : S.identifier) =
+  let predicate { name ; value = _ } = String.(=) id name in
   let projection binding = binding.value in
   Option.map (List.find gamma ~f:predicate) ~f:projection
 
@@ -27,8 +28,9 @@ let rec synthesize gamma expression =
       let%bind { expr = _ ; note = lht } as lhs' = synthesize gamma lhs in
       let%bind { expr = _ ; note = rht } as rhs' = synthesize gamma rhs in
       begin match (lht, rht) with
-      (* STLC should expose Z64 identifier *)
-      | (TypeSymbol "z64", TypeSymbol "z64") -> return (Bin (op, lhs', rhs')) z64
+      | (TypeSymbol lhs, TypeSymbol rhs)
+      when String.equal lhs z64_symbol && String.equal rhs z64_symbol ->
+        return (Bin (op, lhs', rhs')) z64
       | _ -> None
       end
   | Var id -> Option.map (lookup gamma id) ~f:(annotate (Var id))
@@ -52,10 +54,28 @@ let rec forget_exn T.{ expr ; note } =
   | T.App (f, x) -> S.App (forget_exn f, forget_exn x)
   | T.Abs (id, body) ->
       begin match note with
-      | S.Arrow (dom, _) -> S.Abs ({name = id ; value = dom}, forget_exn body)
+      | Arrow (dom, _) -> S.Abs ({name = id ; value = dom}, forget_exn body)
       | _ -> failwith "expected arrow type"
       end
 
+
+let annotate program =
+
+  let constructor_map { name = type_name ; value } =
+    let f { name = constructor_name ; parameter } = (constructor_name, type_name) in
+    Map.of_alist_exn (module String) (List.map value ~f) in
+
+  let constructor_maps =
+    List.map program.S.types ~f:constructor_map in
+
+  let global_map =
+    let empty = Map.empty (module String) in
+    List.fold constructor_maps ~init:empty ~f:Map.merge_disjoint_exn in
+
+  failwith ""
+
+(*
 let annotate = synthesize []
+*)
 
 let annotate_exn = Fn.compose value_exn annotate

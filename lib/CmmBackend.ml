@@ -1,5 +1,6 @@
 open Core
 open Prelude
+open Types
 
 module S = TAC (* source *)
 module T = Cmm (* target *)
@@ -44,13 +45,13 @@ let compile_program source =
   (* a list of all function types in the program *)
   let function_types =
     let multi = List.map function_definitions ~f:S.definition_type in
-    List.dedup_and_sort multi ~compare:STLC.Ty.compare in
+    List.dedup_and_sort multi ~compare:Ty.compare in
 
   (* a map from each function type to its index *)
   let type_to_index =
-    let sorted = List.dedup_and_sort function_types ~compare:STLC.Ty.compare in
+    let sorted = List.dedup_and_sort function_types ~compare:Ty.compare in
     let indexed = List.mapi sorted ~f:(Fn.flip Tuple2.create) in
-    Map.of_alist_exn (module STLC.Ty) indexed in
+    Map.of_alist_exn (module Ty) indexed in
 
   (* lookup a type's index via the above map *)
   let lookup_type_index = Map.find_exn type_to_index in
@@ -62,8 +63,8 @@ let compile_program source =
       | id -> id in
 
     match t with
-    | STLC.TypeSymbol id -> T.TypeSymbol (translate_type_symbol id)
-    | STLC.Arrow _ -> T.TypeSymbol (name_type (lookup_type_index t)) in
+    | TypeSymbol id -> T.TypeSymbol (translate_type_symbol id)
+    | Arrow _ -> T.TypeSymbol (name_type (lookup_type_index t)) in
 
   (* map from function index to environment type *)
   let environment_map =
@@ -96,7 +97,7 @@ let compile_program source =
 
   (* filter functions by type *)
   let functions_of_type t =
-    let filter (_, d) = [%equal: STLC.ty] t (S.definition_type d) in
+    let filter (_, d) = [%equal: ty] t (S.definition_type d) in
     let bindings = List.filter function_bindings ~f:filter in
     List.map bindings ~f:fst in
 
@@ -104,7 +105,7 @@ let compile_program source =
   let type_to_functions =
     let associate_functions t = (t, functions_of_type t) in
     let kvs = List.map function_types ~f:associate_functions in
-    Map.of_alist_exn (module STLC.Ty) kvs in
+    Map.of_alist_exn (module Ty) kvs in
 
   (* a map from each function type index to the list of functions inhabiting it *)
   let type_index_to_functions =

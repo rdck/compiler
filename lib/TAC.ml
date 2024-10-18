@@ -4,14 +4,12 @@
 
 open Core
 open Prelude
+open Types
 
 type index = int
 [@@deriving equal, show]
 
 type identifier = STLC.identifier
-[@@deriving equal, show]
-
-type ty = STLC.ty
 [@@deriving equal, show]
 
 type binop = STLC.binop
@@ -57,7 +55,7 @@ type instruction =
 
 let show_instruction = function
   | Store (out, t, value) ->
-      sprintf "%s : %s := %s" (show_register out) (STLC.show_ty t) (show_expression value)
+      sprintf "%s : %s := %s" (show_register out) ([%show: ty] t) (show_expression value)
   | Return r ->
       sprintf "ret %s" (show_register r)
 
@@ -100,4 +98,4 @@ let pp_program f p =
   Format.fprintf f "%s" (show_program p)
 
 let definition_type definition =
-  STLC.Arrow (definition.arg.value, definition.return_type)
+  Arrow (definition.arg.value, definition.return_type)

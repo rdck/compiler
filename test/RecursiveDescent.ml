@@ -1,6 +1,7 @@
 open Compiler
 open RecursiveDescent
 open Core
+open Types
 
 module T = Alcotest
 
@@ -12,7 +13,8 @@ let tokenize_string =
 let test_case_for_type input expect =
 
   let check_type name input expect =
-    let testable_type = T.option @@ T.testable STLC.pp_ty [%equal: STLC.ty] in
+    (* TODO: macro for pp_ty *)
+    let testable_type = T.option @@ T.testable pp_ty [%equal: ty] in
     let tokens = tokenize_string input in
     let parsed = Option.map (parse_type tokens) ~f:project_result in
     T.check testable_type name parsed expect in
@@ -27,8 +29,8 @@ let () =
 
     "parse_type", [
 
-      test_case_for_type "Z64" @@ Some STLC.z64 ;
-      test_case_for_type "(Z64 -> Z64)" @@ Some STLC.(Arrow (z64, z64)) ;
+      test_case_for_type "z64" @@ Some z64 ;
+      test_case_for_type "(z64 -> z64)" @@ Some (Arrow (z64, z64)) ;
 
     ] ;
 

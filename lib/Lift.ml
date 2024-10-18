@@ -29,6 +29,7 @@ let lookup gamma id =
 let lookup_exn gamma id =
   Option.value_exn (lookup gamma id)
 
+(*
 let lift term =
 
   let counter = ref 0 in
@@ -101,3 +102,6 @@ let lift term =
         }
 
   in process "" [] term
+*)
+
+let lift = failwith "TODO"

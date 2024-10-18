@@ -2,6 +2,6 @@
 (* Annotated -> Lifted *)
 (******************************************************************************)
 
-open Annotated
+open Types
 
-val lift : ty expression -> Lifted.program
+val lift : Annotated.program -> Lifted.program

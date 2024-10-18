@@ -1,5 +1,6 @@
 open Prelude
 open STLC
+open Types
 
 let bind s t = { name = s ; value = t }
 let lit i = Lit i

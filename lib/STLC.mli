@@ -2,36 +2,11 @@
 (* SIMPLY TYPED LAMBDA CALCULUS *)
 (******************************************************************************)
 
-open Core
 open Prelude
+open Types
 
 type identifier = string
 [@@deriving equal, show]
-
-type ty =
-  | TypeSymbol of identifier
-  | Arrow of ty * ty
-[@@deriving equal, show, compare, sexp]
-
-val z64 : ty
-
-type constructor = {
-  name : identifier ;
-  parameter : ty ;
-}
-[@@deriving equal, show]
-
-(* should have at least one constructor *)
-type type_body = constructor list
-[@@deriving equal, show]
-
-(* comparable types *)
-module Ty : sig
-
-  type t = ty [@@deriving compare, sexp]
-  include Comparable.S with type t := t
-
-end
 
 type binop =
   | Add
@@ -68,6 +43,6 @@ val project_domain_exn    : ty -> ty
 val project_codomain_exn  : ty -> ty
 
 type program = {
-  types : (identifier, type_body) bindings ;
+  types : (identifier, type_specifier) bindings ;
   values : (identifier, expression) bindings ;
 }

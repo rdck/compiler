@@ -2,6 +2,7 @@ open Compiler
 open Pratt
 open Core
 open Prelude
+open Types
 
 module T = Alcotest
 
@@ -13,7 +14,8 @@ let tokenize_string =
 let test_case_for_type input expect =
 
   let check_type name input expect =
-    let testable_type = T.option @@ T.testable STLC.pp_ty [%equal: STLC.ty] in
+    (* TODO: macro for pp_ty *)
+    let testable_type = T.option @@ T.testable pp_ty [%equal: ty] in
     let tokens = tokenize_string input in
     let parsed = Option.map (parse_type tokens) ~f:project_result in
     T.check testable_type name parsed expect in
@@ -40,13 +42,13 @@ let () =
 
     "parse_type", [
 
-      test_case_for_type "Z64" @@ Some STLC.z64 ;
+      test_case_for_type "z64" @@ Some z64 ;
 
-      test_case_for_type "Z64 -> Z64 -> Z64" @@ Some STLC.(
+      test_case_for_type "z64 -> z64 -> z64" @@ Some (
         Arrow (z64, Arrow (z64, z64))
       ) ;
 
-      test_case_for_type "(Z64 -> Z64) -> Z64" @@ Some STLC.(
+      test_case_for_type "(z64 -> z64) -> z64" @@ Some (
         Arrow (Arrow (z64, z64), z64)
       ) ;
 
@@ -70,11 +72,11 @@ let () =
         Bin (Add, Bin (Add, Lit 2, Bin (Mul, Lit 3, Lit 4)), Lit 5)
       ) ;
 
-      test_case_for_expr "λ x : Z64 . x" @@ Some STLC.(
+      test_case_for_expr "λ x : z64 . x" @@ Some STLC.(
         Abs ({ name = "x" ; value = z64 }, Var "x")
       ) ;
 
-      test_case_for_expr "λ x : Z64 . x + x" @@ Some STLC.(
+      test_case_for_expr "λ x : z64 . x + x" @@ Some STLC.(
         Abs ({ name = "x" ; value = z64 }, Bin (Add, Var "x", Var "x"))
       ) ;
 
@@ -90,7 +92,7 @@ let () =
         Bin (Mul, Var "a", App (Var "f", Var "x"))
       ) ;
 
-      test_case_for_expr "λ f : Z64 -> Z64 . λ x : Z64 . f (f x)" @@ Some STLC.(
+      test_case_for_expr "λ f : z64 -> z64 . λ x : z64 . f (f x)" @@ Some STLC.(
         let body = App (Var "f", App (Var "f", Var "x")) in
         Abs (binding "f" (Arrow (z64, z64)), Abs (binding "x" z64, body))
       ) ;

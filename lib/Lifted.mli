@@ -4,6 +4,7 @@
 
 open Core
 open Prelude
+open Types
 
 type binop = STLC.binop
 [@@deriving equal, show]
@@ -12,9 +13,6 @@ type identifier = STLC.identifier
 [@@deriving equal, show]
 
 type index = int
-[@@deriving equal, show]
-
-type ty = STLC.ty
 [@@deriving equal, show]
 
 type variable =

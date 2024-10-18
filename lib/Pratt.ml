@@ -1,5 +1,6 @@
 open Core
 open Token
+open Types
 
 module T = STLC (* target *)
 
@@ -24,13 +25,13 @@ let rec parse_type tokens =
         let%bind { result ; rest } = parse_type rest in
         let%bind rest = consume ShutParen rest in
         return_parse result rest
-    | Identifier id :: rest -> return_parse (T.TypeSymbol id) rest
+    | Identifier id :: rest -> return_parse (TypeSymbol id) rest
     | _ -> None in
 
   let%bind { result = lhs ; rest } = parse_atom tokens in
   let rhs = let%bind rest = consume Arrow rest in parse_type rest in
   Option.value_map rhs ~default:(return_parse lhs rest) ~f:(
-    fun { result = rhs ; rest } -> return_parse (T.Arrow (lhs, rhs)) rest
+    fun { result = rhs ; rest } -> return_parse (Arrow (lhs, rhs)) rest
   )
 
 let rec pratt p tokens =
@@ -92,4 +93,7 @@ let parse_program tokens =
   let open Option.Let_syntax in
   let%bind { result ; rest } = parse_expression tokens in
   let%bind _ = consume EOF rest in
-  return result
+  return T.{
+    types = [] ;
+    values = [ { name = "main" ; value = result } ] ;
+  }
