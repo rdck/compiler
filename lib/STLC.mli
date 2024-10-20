@@ -29,11 +29,7 @@ type expression =
   | App of expression * expression
   | Abs of (identifier, ty) binding * expression
   | Con of identifier * expression
-  | Mat of expression * case list
-and case = {
-  pattern : pattern ;
-  body : expression ;
-}
+  | Mat of expression * (pattern * expression) list
 [@@deriving equal, show]
 
 val project_domain    : ty -> ty option

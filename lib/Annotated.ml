@@ -12,12 +12,17 @@ type identifier = STLC.identifier
 type binop = STLC.binop
 [@@deriving equal, show]
 
+type pattern = STLC.pattern
+[@@deriving equal, show]
+
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
   | Var of identifier
   | App of 'a expression * 'a expression
   | Abs of identifier * 'a expression
+  | Con of identifier * 'a expression
+  | Mat of 'a expression * (pattern * 'a expression) list
 and 'a expression = {
   expr : 'a node ;
   note : 'a ;

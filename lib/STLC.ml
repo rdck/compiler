@@ -43,11 +43,7 @@ type expression =
   | App of expression * expression
   | Abs of (identifier, ty) binding * expression
   | Con of identifier * expression
-  | Mat of expression * case list
-and case = {
-  pattern : pattern ;
-  body : expression ;
-}
+  | Mat of expression * (pattern * expression) list
 [@@deriving equal]
 
 module Expression = struct
@@ -94,12 +90,6 @@ let show_expression = Printer.print
 
 let pp_expression f e =
   Format.fprintf f "%s" (show_expression e)
-
-let show_case { pattern ; body } =
-  sprintf "%s => %s" (show_pattern pattern) (show_expression body)
-
-let pp_case f c =
-  Format.fprintf f "%s" (show_case c)
 
 let project_domain = function
   | TypeSymbol _ -> None

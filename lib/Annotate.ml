@@ -9,42 +9,13 @@ open Types
 module S = STLC       (* source *)
 module T = Annotated  (* target *)
 
-type 'a environment = (S.identifier, 'a) binding list
+type 'a environment = (S.identifier, 'a) bindings
 
 (* factor out *)
 let lookup (gamma : ty environment) (id : S.identifier) =
   let predicate { name ; value = _ } = String.(=) id name in
   let projection binding = binding.value in
   Option.map (List.find gamma ~f:predicate) ~f:projection
-
-let rec synthesize gamma expression =
-  let open S in
-  let open Option.Let_syntax in
-  let annotate x t = { T.expr = x ; T.note = t } in
-  let return x t = Option.return (annotate x t) in
-  match expression with
-  | Lit i -> return (Lit i) z64
-  | Bin (op, lhs, rhs) ->
-      let%bind { expr = _ ; note = lht } as lhs' = synthesize gamma lhs in
-      let%bind { expr = _ ; note = rht } as rhs' = synthesize gamma rhs in
-      begin match (lht, rht) with
-      | (TypeSymbol lhs, TypeSymbol rhs)
-      when String.equal lhs z64_symbol && String.equal rhs z64_symbol ->
-        return (Bin (op, lhs', rhs')) z64
-      | _ -> None
-      end
-  | Var id -> Option.map (lookup gamma id) ~f:(annotate (Var id))
-  | App (f, x) ->
-      let%bind { expr = _ ; note = ft } as f' = synthesize gamma f in
-      let%bind { expr = _ ; note = xt } as x' = synthesize gamma x in
-      begin match (ft, xt) with
-      | (Arrow (dom, cod), dom') when [%equal: ty] dom dom' ->
-          return (App (f', x')) cod
-      | _ -> None
-      end
-  | Abs ({ name ; value = dom } as binding, body) ->
-      let%bind { expr = _ ; note = cod } as body' = synthesize (binding :: gamma) body in
-      return (Abs (name, body')) (Arrow (dom, cod))
 
 let rec forget_exn T.{ expr ; note } =
   match expr with
@@ -58,24 +29,120 @@ let rec forget_exn T.{ expr ; note } =
       | _ -> failwith "expected arrow type"
       end
 
+type constructor_spec = {
+  family : string ;
+  parameter : ty ;
+}
+
+(* 'a option list -> 'a list option *)
+let rec all =
+  let open Option.Let_syntax in function
+  | [] -> return []
+  | Some x :: xs ->
+      let%bind rest = all xs in
+      return (x :: rest)
+  | None :: xs -> None
+
+(* factor out *)
+let rec fold_option f z =
+  let open Option.Let_syntax in function
+    | [] -> return []
+    | x :: xs ->
+        let%bind z = f z x in
+        fold_option f z xs
 
 let annotate program =
 
-  let constructor_map { name = type_name ; value } =
-    let f { name = constructor_name ; parameter } = (constructor_name, type_name) in
-    Map.of_alist_exn (module String) (List.map value ~f) in
+  let open Option.Let_syntax in
 
-  let constructor_maps =
-    List.map program.S.types ~f:constructor_map in
+  (* constructor symbol table *)
+  let constructor_table =
 
-  let global_map =
+    (* build map from a single type definition *)
+    let constructor_map { name = family ; value } =
+      let f { name = constructor ; parameter } =
+        (constructor, { family ; parameter }) in
+      Map.of_alist_exn (module String) (List.map value ~f) in
+
+    (* total list of maps *)
+    let constructor_maps =
+      List.map program.S.types ~f:constructor_map in
+
     let empty = Map.empty (module String) in
+
+    (* fold maps *)
     List.fold constructor_maps ~init:empty ~f:Map.merge_disjoint_exn in
 
-  failwith ""
+  (* user type symbol table *)
+  let type_table =
+    let type_alist = List.map program.S.types ~f:pair_of_binding in
+    Map.of_alist_exn (module String) type_alist in
 
-(*
-let annotate = synthesize []
-*)
+  (* constructor lookup function *)
+  let lookup_constructor c = Map.find_exn constructor_table c in
+
+  (* elaborate an expression in a typing context *)
+  let rec synth gamma expression =
+    let open S in
+    let annotate x t = { T.expr = x ; T.note = t } in
+    let return x t = Option.return (annotate x t) in
+    match expression with
+    | Lit i -> return (Lit i) z64
+    | Bin (op, lhs, rhs) ->
+        let%bind { expr = _ ; note = lht } as lhs' = synth gamma lhs in
+        let%bind { expr = _ ; note = rht } as rhs' = synth gamma rhs in
+        begin match (lht, rht) with
+        | (TypeSymbol lhs, TypeSymbol rhs)
+        when String.equal lhs z64_symbol && String.equal rhs z64_symbol ->
+          return (Bin (op, lhs', rhs')) z64
+        | _ -> None
+        end
+    | Var id -> Option.map (lookup gamma id) ~f:(annotate (Var id))
+    | App (f, x) ->
+        let%bind { expr = _ ; note = ft } as f' = synth gamma f in
+        let%bind { expr = _ ; note = xt } as x' = synth gamma x in
+        begin match (ft, xt) with
+        | (Arrow (dom, cod), dom') when [%equal: ty] dom dom' ->
+            return (App (f', x')) cod
+        | _ -> None
+        end
+    | Abs ({ name ; value = dom } as binding, body) ->
+        let%bind { expr = _ ; note = cod } as body' = synth (binding :: gamma) body in
+        return (Abs (name, body')) (Arrow (dom, cod))
+    | Con (c, p) ->
+        let { family ; parameter = expect } = lookup_constructor c in
+        let%bind actual = synth gamma p in
+        if [%equal: ty] actual.T.note expect
+        then return (Con (c, actual)) (TypeSymbol family)
+        else None
+    | Mat (control, cases) ->
+        let%bind { expr ; note = expect } as control = synth gamma control in
+        let f ({ name ; parameter }, body) =
+          let spec = lookup_constructor name in
+          if [%equal: ty] (TypeSymbol spec.family) expect
+          then synth (binding parameter spec.parameter :: gamma) body
+          else None in
+        let%bind annotated_cases = all (List.map cases ~f) in
+        let annotations = List.map annotated_cases ~f:(fun c -> c.note) in
+        let%bind body_type = List.all_equal annotations ~equal:[%equal: ty] in
+        let patterns = List.map cases ~f:fst in
+        let zipped = List.zip_exn patterns annotated_cases in
+        return (Mat (control, zipped)) body_type in
+
+  let values =
+
+    let f acc { name ; value } =
+      let gamma = List.map acc ~f:(fun { name ; value } -> binding name value.T.note) in
+      let%bind synthesized = synth gamma value in
+      return (binding name synthesized :: acc) in
+
+    fold_option f [] program.S.values in
+
+  let%bind values = values in
+
+  Some T.{
+    types = program.S.types ;
+    values = values ;
+  }
 
 let annotate_exn = Fn.compose value_exn annotate

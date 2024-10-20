@@ -26,3 +26,5 @@ let project_value binding = binding.value
 
 let value_exn opt =
   Option.value_exn opt
+
+let pair_of_binding { name ; value } = (name, value)
