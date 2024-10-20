@@ -2,6 +2,4 @@
 (* Annotated -> Lifted *)
 (******************************************************************************)
 
-open Types
-
 val lift : Annotated.program -> Lifted.program

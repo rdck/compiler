@@ -28,6 +28,10 @@ let rec forget_exn T.{ expr ; note } =
       | Arrow (dom, _) -> S.Abs ({name = id ; value = dom}, forget_exn body)
       | _ -> failwith "expected arrow type"
       end
+  | T.Con (id, p) -> S.Con (id, forget_exn p)
+  | T.Mat (control, cases) ->
+      let f (pattern, body) = (pattern, forget_exn body) in
+      S.Mat (forget_exn control, List.map cases ~f)
 
 type constructor_spec = {
   family : string ;
@@ -41,9 +45,8 @@ let rec all =
   | Some x :: xs ->
       let%bind rest = all xs in
       return (x :: rest)
-  | None :: xs -> None
+  | None :: _ -> None
 
-(* factor out *)
 let rec fold_option f z =
   let open Option.Let_syntax in function
     | [] -> return []
@@ -72,11 +75,6 @@ let annotate program =
 
     (* fold maps *)
     List.fold constructor_maps ~init:empty ~f:Map.merge_disjoint_exn in
-
-  (* user type symbol table *)
-  let type_table =
-    let type_alist = List.map program.S.types ~f:pair_of_binding in
-    Map.of_alist_exn (module String) type_alist in
 
   (* constructor lookup function *)
   let lookup_constructor c = Map.find_exn constructor_table c in
@@ -116,7 +114,7 @@ let annotate program =
         then return (Con (c, actual)) (TypeSymbol family)
         else None
     | Mat (control, cases) ->
-        let%bind { expr ; note = expect } as control = synth gamma control in
+        let%bind { expr = _ ; note = expect } as control = synth gamma control in
         let f ({ name ; parameter }, body) =
           let spec = lookup_constructor name in
           if [%equal: ty] (TypeSymbol spec.family) expect

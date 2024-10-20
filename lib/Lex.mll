@@ -5,6 +5,7 @@ open Core
 
 let digits = ['0'-'9']+
 let id = ['a'-'z'] ['a'-'z' '0'-'9']*
+let constructor = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
 let whitespace = [ ' ' '\n' '\t' '\r' ]+
 
 rule lex = parse
@@ -22,9 +23,18 @@ rule lex = parse
   | "λ"     { Lambda      }
   | "->"    { Arrow       }
   | "→"     { Arrow       }
+  | "="     { Equal       }
+  | "|"     { Bar         }
+  | "type"  { Type        }
+  | "match" { Match       }
+  | "end"   { End         }
+  | "of"    { Of          }
+  | "with"  { With        }
+  | "def"   { Def         }
 
   | digits as d { Literal (Int.of_string d) }
   | id as id { Identifier id }
+  | constructor as id { Constructor id }
   | eof { EOF }
 
 {
