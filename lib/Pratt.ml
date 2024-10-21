@@ -1,6 +1,7 @@
 open Core
 open Token
 open Types
+open Prelude
 
 module T = STLC (* target *)
 
@@ -89,11 +90,53 @@ and loop p lhs rest =
 
 let parse_expression = pratt 0
 
-let parse_program tokens =
+let parse_constructor =
+  let open Option.Let_syntax in function
+  | Bar :: Constructor name :: Of :: rest ->
+      let%bind { result = parameter ; rest } = parse_type rest in
+      return_parse { name ; parameter } rest
+  | _ -> None
+
+(* TODO: disallow empty list *)
+let rec parse_type_specifier rest =
+  match parse_constructor rest with
+  | None -> { result = [] ; rest }
+  | Some { result = c ; rest } ->
+      let { result = cs ; rest } = parse_type_specifier rest in
+      parse (c :: cs) rest
+
+let parse_type_definition rest =
+  match rest with
+  | Type :: Identifier id :: Equal :: rest ->
+      let { result = spec ; rest } = parse_type_specifier rest in
+      return_parse (binding id spec) rest
+  | _ -> None
+
+let rec parse_type_definitions rest =
+  match parse_type_definition rest with
+  | None -> { result = [] ; rest }
+  | Some { result = def ; rest } ->
+      let { result = defs ; rest } = parse_type_definitions rest in
+      parse (def :: defs) rest
+
+let parse_definition rest =
   let open Option.Let_syntax in
-  let%bind { result ; rest } = parse_expression tokens in
+  match rest with
+  | Def :: Identifier id :: Equal :: rest ->
+      let%bind { result = body ; rest } = parse_expression rest in
+      return_parse (binding id body) rest
+  | _ -> None
+
+let rec parse_definitions rest =
+  match parse_definition rest with
+  | None -> { result = [] ; rest }
+  | Some { result = def ; rest } ->
+      let { result = defs ; rest } = parse_definitions rest in
+      parse (def :: defs) rest
+
+let parse_program rest =
+  let open Option.Let_syntax in
+  let { result = types ; rest } = parse_type_definitions rest in
+  let { result = values ; rest } = parse_definitions rest in
   let%bind _ = consume EOF rest in
-  return T.{
-    types = [] ;
-    values = [ { name = "main" ; value = result } ] ;
-  }
+  return T.{ types ; values ; }
