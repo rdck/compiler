@@ -38,21 +38,19 @@ type constructor_spec = {
   parameter : ty ;
 }
 
-(* 'a option list -> 'a list option *)
-let rec all =
-  let open Option.Let_syntax in function
-  | [] -> return []
-  | Some x :: xs ->
-      let%bind rest = all xs in
-      return (x :: rest)
-  | None :: _ -> None
+let all xs =
+  let rec f acc = function
+    | [] -> Some acc
+    | Some x :: xs -> (f [@tailcall]) (x :: acc) xs
+    | None :: _ -> None in
+  Option.map ~f:List.rev (f [] xs)
 
 let rec fold_option f z =
   let open Option.Let_syntax in function
     | [] -> return []
     | x :: xs ->
         let%bind z = f z x in
-        fold_option f z xs
+        (fold_option [@tailcall]) f z xs
 
 let annotate program =
 
