@@ -2,4 +2,4 @@
 (* Annotated -> Lifted *)
 (******************************************************************************)
 
-val lift : Annotated.program -> Lifted.program
+val lift_program : Annotated.program -> Lifted.program

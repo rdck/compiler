@@ -9,7 +9,7 @@ let compile path =
       let parsed = Option.value_exn (Pratt.parse_program lexed) in
       let compiled = parsed
         |> Annotate.annotate_exn
-        |> Lift.lift
+        |> Lift.lift_program
         |> Translate.compile_program
         |> CmmBackend.compile_program in
       printf "%s\n" (Cmm.represent compiled)

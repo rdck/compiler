@@ -138,7 +138,7 @@ let annotate program =
 
   Some T.{
     types = program.S.types ;
-    values = values ;
+    terms = values ;
   }
 
-let annotate_exn = Fn.compose value_exn annotate
+let annotate_exn prog = Option.value_exn (annotate prog)

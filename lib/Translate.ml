@@ -16,6 +16,10 @@ type compilation = {
 let project_code x = x.code
 let project_reg x = x.reg
 
+let compile_program S.{ types ; terms } =
+  failwith ""
+
+(*
 let compile_program S.{ functions ; body } =
 
   let compile_expression expr =
@@ -78,3 +82,4 @@ let compile_program S.{ functions ; body } =
       let { code ; reg } = compile_expression body in
       code @ [ T.Return reg ] ;
   }
+*)

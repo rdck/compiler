@@ -12,25 +12,23 @@ type binop = STLC.binop
 type identifier = STLC.identifier
 [@@deriving equal, show]
 
-type index = int
+type symbol =
+  | Symbol of identifier
+  | GenSym of identifier * int
 [@@deriving equal, show]
 
-type variable =
-  | Arg
-  | Env of identifier
-[@@deriving equal]
+let show_symbol = function
+  | Symbol id -> id
+  | GenSym (id, idx) -> sprintf "%s_%d" id idx
 
-let show_variable = function
-  | Arg -> "arg"
-  | Env id -> sprintf "env.%s" id
-
-let pp_variable f v = Format.fprintf f "%s" (show_variable v)
+let pp_symbol f s =
+  Format.fprintf f "%s" (show_symbol s)
 
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
-  | Var of variable
-  | Closure of index * 'a expression list
+  | Var of identifier
+  | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
 and 'a expression = {
   expr : 'a node ;
@@ -58,7 +56,7 @@ module Term = struct
         | Exp -> Binary (4, Right, lhs, rhs)
         end
     | Var _ -> Nullary
-    | Closure (_, args) -> Nary args
+    | Cls (_, args) -> Nary args
     | App (f, x) -> Binary (5, Left, f, x)
 
   let node_text { expr ; note = _ } =
@@ -68,10 +66,9 @@ module Term = struct
     | Bin (Sub, _, _) -> " - "
     | Bin (Mul, _, _) -> " * "
     | Bin (Exp, _, _) -> " ^ "
-    | Var Arg -> "arg"
-    | Var (Env id) -> sprintf "env.%s" id
+    | Var id -> id
     | App _ -> " "
-    | Closure (idx, _) -> sprintf "f%d" idx
+    | Cls (sym, _) -> show_symbol sym
 
 end
 
@@ -96,18 +93,13 @@ let show_definition { env ; arg ; body } =
 
 let pp_definition f d = Format.fprintf f "%s" (show_definition d)
 
-type 'a symbol_table = (index, 'a, Int.comparator_witness) Map.t
-
 type program = {
-  functions : definition symbol_table ;
-  body : term ;
+  types : (identifier, type_specifier) bindings ;
+  terms : (symbol, definition) bindings ;
 }
 
-let show_program { functions ; body } =
-  let fs = Map.to_alist functions in
-  let f (k, v) = sprintf "f%d %s" k (show_definition v) in
-  let fs' = List.map fs ~f:f in
-  sprintf "%s\n%s" (String.concat ~sep:"\n" fs') (show_term body)
+let show_program { types ; terms } =
+  sprintf "TODO"
 
 let pp_program f p =
   Format.fprintf f "%s" (show_program p)

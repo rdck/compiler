@@ -2,7 +2,6 @@
 (* LIFTED LAMBDA CALCULUS *)
 (******************************************************************************)
 
-open Core
 open Prelude
 open Types
 
@@ -12,19 +11,17 @@ type binop = STLC.binop
 type identifier = STLC.identifier
 [@@deriving equal, show]
 
-type index = int
-[@@deriving equal, show]
-
-type variable =
-  | Arg
-  | Env of identifier
+(* A symbol is either... *)
+type symbol =
+  | Symbol of identifier        (* a given name         *)
+  | GenSym of identifier * int  (* or a generated name. *)
 [@@deriving equal, show]
 
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
-  | Var of variable
-  | Closure of index * 'a expression list
+  | Var of identifier
+  | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
 and 'a expression = {
   expr : 'a node ;
@@ -36,16 +33,14 @@ type term = ty expression
 [@@deriving equal, show]
 
 type definition = {
-  env : (identifier, ty) binding list ;
+  env : (identifier, ty) bindings ;
   arg : (identifier, ty) binding ;
   body : term ;
 }
 [@@deriving equal, show]
 
-type 'a symbol_table = (index, 'a, Int.comparator_witness) Map.t
-
 type program = {
-  functions : definition symbol_table ;
-  body : term ;
+  types : (identifier, type_specifier) bindings ;
+  terms : (symbol, definition) bindings ;
 }
 [@@deriving show]

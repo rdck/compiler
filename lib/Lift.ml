@@ -29,6 +29,41 @@ let lookup gamma id =
 let lookup_exn gamma id =
   Option.value_exn (lookup gamma id)
 
+type lift = {
+  lifted : (T.symbol, T.definition) bindings ;
+  body : T.term ;
+}
+
+(* lift all lambdas in a single top level definition *)
+let lift_definition { name ; value = definition } =
+
+  (* set up local symbol generator *)
+  let counter = ref 0 in
+  let gensym name () =
+    let index = !counter in
+    counter := index + 1 ;
+    T.GenSym (name, index) in
+
+  let rec lift gamma S.{ expr ; note } =
+
+    let output lifted body = { lifted ; body } in
+    let translate expr = T.{ expr ; note } in
+
+    match expr with
+    | S.Lit i -> output [] (translate (Lit i))
+    | _ -> failwith "TODO" in
+
+  failwith "TODO"
+
+let lift_program S.{ types ; terms } =
+
+  let terms = failwith "TODO" in
+
+  T.{
+    types = types ;
+    terms = terms ;
+  }
+
 (*
 let lift term =
 

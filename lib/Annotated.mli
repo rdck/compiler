@@ -33,5 +33,5 @@ type value = ty expression
 
 type program = {
   types : (identifier, type_specifier) bindings ;
-  values : (identifier, value) bindings ;
+  terms : (identifier, value) bindings ;
 }

@@ -200,8 +200,8 @@ let compile_program source =
 
       let functions = functions_of_type function_type in
       let ft_index = lookup_type_index function_type in
-      let domain = STLC.project_domain_exn function_type in
-      let codomain = STLC.project_codomain_exn function_type in
+      let domain = project_domain_exn function_type in
+      let codomain = project_codomain_exn function_type in
 
       let to_case fidx =
 

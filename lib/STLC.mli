@@ -32,12 +32,6 @@ type expression =
   | Mat of expression * (pattern * expression) list
 [@@deriving equal, show]
 
-val project_domain    : ty -> ty option
-val project_codomain  : ty -> ty option
-
-val project_domain_exn    : ty -> ty
-val project_codomain_exn  : ty -> ty
-
 type program = {
   types : (identifier, type_specifier) bindings ;
   values : (identifier, expression) bindings ;

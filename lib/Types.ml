@@ -51,3 +51,14 @@ module Ty = struct
 
 end
 
+let project_domain = function
+  | TypeSymbol _ -> None
+  | Arrow (domain, _) -> Some domain
+
+let project_domain_exn t = Option.value_exn (project_domain t)
+
+let project_codomain = function
+  | TypeSymbol _ -> None
+  | Arrow (_, codomain) -> Some codomain 
+
+let project_codomain_exn t = Option.value_exn (project_codomain t)

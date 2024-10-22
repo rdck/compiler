@@ -14,6 +14,4 @@ val binding : 'k -> 'v -> ('k, 'v) binding
 val project_name : ('k, 'v) binding -> 'k
 val project_value : ('k, 'v) binding -> 'v
 
-val value_exn : 'a option -> 'a
-
 val pair_of_binding : ('k, 'v) binding -> 'k * 'v

@@ -33,3 +33,8 @@ module Ty : sig
 
 end
 
+val project_domain    : ty -> ty option
+val project_codomain  : ty -> ty option
+
+val project_domain_exn    : ty -> ty
+val project_codomain_exn  : ty -> ty

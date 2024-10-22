@@ -66,8 +66,8 @@ module Expression = struct
     | Abs (_, body) -> Unary (1, body)
     (* unsure about this precedence *)
     | Con (_, arg) -> Unary (5, arg)
-    (* this would need to be n-ary *)
-    | Mat _ -> Nullary
+    (* TODO: figure out how to show patterns *)
+    | Mat (e, es) -> Nary (e :: List.map es ~f:snd)
   
   let node_text = function
     | Lit i -> sprintf "%d" i
@@ -90,20 +90,6 @@ let show_expression = Printer.print
 
 let pp_expression f e =
   Format.fprintf f "%s" (show_expression e)
-
-let project_domain = function
-  | TypeSymbol _ -> None
-  | Arrow (domain, _) -> Some domain
-
-let project_domain_exn =
-  Fn.compose value_exn project_domain
-
-let project_codomain = function
-  | TypeSymbol _ -> None
-  | Arrow (_, codomain) -> Some codomain 
-
-let project_codomain_exn =
-  Fn.compose value_exn project_codomain
 
 type program = {
   types : (identifier, type_specifier) bindings ;
