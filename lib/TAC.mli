@@ -6,7 +6,7 @@ open Core
 open Prelude
 open Types
 
-type index = int
+type symbol = Lifted.symbol
 [@@deriving equal, show]
 
 type identifier = STLC.identifier
@@ -16,7 +16,7 @@ type binop = STLC.binop
 [@@deriving equal, show]
 
 type register =
-  | Reg of index
+  | Reg of int
   | Arg
   | Env of identifier
 [@@deriving equal, show]
@@ -24,7 +24,7 @@ type register =
 type expression =
   | Lit of int
   | Bin of binop * register * register
-  | Closure of index * register list
+  | Closure of symbol * register list
   | Call of register * register
 [@@deriving equal, show]
 
@@ -41,10 +41,9 @@ type definition = {
 }
 [@@deriving equal, show]
 
-type 'a symbol_table = (index, 'a, Int.comparator_witness) Map.t
-
 type program = {
-  functions : definition symbol_table ;
+  types : (identifier, type_specifier) bindings ;
+  terms : (symbol, definition) bindings ;
   body : instruction list ;
 }
 [@@deriving show]

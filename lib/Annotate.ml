@@ -75,7 +75,7 @@ let annotate program =
     List.fold constructor_maps ~init:empty ~f:Map.merge_disjoint_exn in
 
   (* constructor lookup function *)
-  let lookup_constructor c = Map.find_exn constructor_table c in
+  let lookup_constructor = Map.find_exn constructor_table in
 
   (* elaborate an expression in a typing context *)
   let rec synth gamma expression =
@@ -125,6 +125,7 @@ let annotate program =
         let zipped = List.zip_exn patterns annotated_cases in
         return (Mat (control, zipped)) body_type in
 
+  (*
   let values =
 
     let f acc { name ; value } =
@@ -135,10 +136,13 @@ let annotate program =
     fold_option f [] program.S.values in
 
   let%bind values = values in
+  *)
+
+  let%bind body = synth [] program.S.body in
 
   Some T.{
     types = program.S.types ;
-    terms = values ;
+    body = body ;
   }
 
 let annotate_exn prog = Option.value_exn (annotate prog)

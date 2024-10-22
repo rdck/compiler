@@ -119,24 +119,9 @@ let rec parse_type_definitions rest =
       let { result = defs ; rest } = parse_type_definitions rest in
       parse (def :: defs) rest
 
-let parse_definition rest =
-  let open Option.Let_syntax in
-  match rest with
-  | Def :: Identifier id :: Equal :: rest ->
-      let%bind { result = body ; rest } = parse_expression rest in
-      return_parse (binding id body) rest
-  | _ -> None
-
-let rec parse_definitions rest =
-  match parse_definition rest with
-  | None -> { result = [] ; rest }
-  | Some { result = def ; rest } ->
-      let { result = defs ; rest } = parse_definitions rest in
-      parse (def :: defs) rest
-
 let parse_program rest =
   let open Option.Let_syntax in
   let { result = types ; rest } = parse_type_definitions rest in
-  let { result = values ; rest } = parse_definitions rest in
+  let%bind { result = body ; rest } = parse_expression rest in
   let%bind _ = consume EOF rest in
-  return T.{ types ; values ; }
+  return T.{ types ; body ; }

@@ -4,6 +4,7 @@
 
 open Core
 open Types
+open Prelude
 
 module S = Lifted (* source *)
 module T = TAC    (* target *)
@@ -16,11 +17,12 @@ type compilation = {
 let project_code x = x.code
 let project_reg x = x.reg
 
+(*
 let compile_program S.{ types ; terms } =
   failwith ""
+*)
 
-(*
-let compile_program S.{ functions ; body } =
+let compile_program S.{ types ; terms ; body } =
 
   let compile_expression expr =
 
@@ -44,11 +46,11 @@ let compile_program S.{ functions ; body } =
             code = lhc @ rhc @ T.[ Store (sym, z64, Bin (op, lhr, rhr)) ] ;
             reg = sym ;
           }
-      | S.Var S.Arg ->
-          { code = [] ; reg = T.Arg }
-      | S.Var (S.Env id) ->
+      | S.Var id ->
           { code = [] ; reg = T.Env id }
-      | S.Closure (idx, args) ->
+      | S.Arg _ ->
+          { code = [] ; reg = T.Arg }
+      | S.Cls (idx, args) ->
           let compiled_args = List.map args ~f:compile in
           let codes = List.map compiled_args ~f:project_code in
           let regs = List.map compiled_args ~f:project_reg in
@@ -66,7 +68,6 @@ let compile_program S.{ functions ; body } =
 
     compile expr in
 
-
   let compile_definition S.{ env ; arg ; body } =
     let { code ; reg } = compile_expression body in
     T.{
@@ -76,10 +77,14 @@ let compile_program S.{ functions ; body } =
       return_type = body.note ;
     } in
 
+  let terms = List.map terms ~f:(fun { name ; value } ->
+    binding name (compile_definition value)
+  ) in
+
   T.{
-    functions = Map.map functions ~f:compile_definition ;
+    types = types ;
+    terms = terms ;
     body =
       let { code ; reg } = compile_expression body in
       code @ [ T.Return reg ] ;
   }
-*)

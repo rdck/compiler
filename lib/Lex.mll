@@ -25,12 +25,13 @@ rule lex = parse
   | "→"     { Arrow       }
   | "="     { Equal       }
   | "|"     { Bar         }
+  | "let"   { Let         }
+  | "in"    { In          }
   | "type"  { Type        }
-  | "match" { Match       }
-  | "end"   { End         }
   | "of"    { Of          }
+  | "match" { Match       }
   | "with"  { With        }
-  | "def"   { Def         }
+  | "end"   { End         }
 
   | digits as d { Literal (Int.of_string d) }
   | id as id { Identifier id }

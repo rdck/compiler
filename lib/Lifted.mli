@@ -11,16 +11,14 @@ type binop = STLC.binop
 type identifier = STLC.identifier
 [@@deriving equal, show]
 
-(* A symbol is either... *)
-type symbol =
-  | Symbol of identifier        (* a given name         *)
-  | GenSym of identifier * int  (* or a generated name. *)
+type symbol = int
 [@@deriving equal, show]
 
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
-  | Var of identifier
+  | Var of identifier (* from environment *)
+  | Arg of identifier (* function parameter *)
   | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
 and 'a expression = {
@@ -42,5 +40,6 @@ type definition = {
 type program = {
   types : (identifier, type_specifier) bindings ;
   terms : (symbol, definition) bindings ;
+  body : term ;
 }
 [@@deriving show]

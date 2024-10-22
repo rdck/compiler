@@ -28,10 +28,7 @@ and 'a expression = {
 }
 [@@deriving equal, show]
 
-type value = ty expression
-[@@deriving equal, show]
-
 type program = {
   types : (identifier, type_specifier) bindings ;
-  terms : (identifier, value) bindings ;
+  body : ty expression ;
 }

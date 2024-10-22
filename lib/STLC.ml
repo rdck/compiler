@@ -93,5 +93,5 @@ let pp_expression f e =
 
 type program = {
   types : (identifier, type_specifier) bindings ;
-  values : (identifier, expression) bindings ;
+  body : expression ;
 }

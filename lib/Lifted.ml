@@ -12,22 +12,14 @@ type binop = STLC.binop
 type identifier = STLC.identifier
 [@@deriving equal, show]
 
-type symbol =
-  | Symbol of identifier
-  | GenSym of identifier * int
+type symbol = int
 [@@deriving equal, show]
-
-let show_symbol = function
-  | Symbol id -> id
-  | GenSym (id, idx) -> sprintf "%s_%d" id idx
-
-let pp_symbol f s =
-  Format.fprintf f "%s" (show_symbol s)
 
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
   | Var of identifier
+  | Arg of identifier
   | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
 and 'a expression = {
@@ -56,6 +48,7 @@ module Term = struct
         | Exp -> Binary (4, Right, lhs, rhs)
         end
     | Var _ -> Nullary
+    | Arg _ -> Nullary
     | Cls (_, args) -> Nary args
     | App (f, x) -> Binary (5, Left, f, x)
 
@@ -66,7 +59,8 @@ module Term = struct
     | Bin (Sub, _, _) -> " - "
     | Bin (Mul, _, _) -> " * "
     | Bin (Exp, _, _) -> " ^ "
-    | Var id -> id
+    | Var id -> sprintf "env.%s" id
+    | Arg id -> id
     | App _ -> " "
     | Cls (sym, _) -> show_symbol sym
 
@@ -96,10 +90,14 @@ let pp_definition f d = Format.fprintf f "%s" (show_definition d)
 type program = {
   types : (identifier, type_specifier) bindings ;
   terms : (symbol, definition) bindings ;
+  body : term ;
 }
 
-let show_program { types ; terms } =
-  sprintf "TODO"
+let show_program { types ; terms ; body } =
+  let f { name = k ; value = v } = sprintf "f%d %s" k (show_definition v) in
+  let fs = List.map terms ~f in
+  let body = show_term body in
+  sprintf "%s\n\n%s" (String.concat ~sep:"\n\n" fs) body
 
 let pp_program f p =
   Format.fprintf f "%s" (show_program p)

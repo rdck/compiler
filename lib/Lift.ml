@@ -4,139 +4,94 @@
 
 open Core
 open Prelude
+open Types
 
 module S = Annotated
 module T = Lifted
 
-let rec free_vars gamma S.{ expr ; note = _ } =
-  let multi = match expr with
-  | S.Lit _ -> []
-  | S.Bin (_, lhs, rhs) -> free_vars gamma lhs @ free_vars gamma rhs
-  | S.Var id ->
-      let member = List.mem gamma id ~equal:[%equal: S.identifier] in
-      if member then [] else [id]
-  | S.App (f, x) -> free_vars gamma f @ free_vars gamma x
-  | S.Abs (id, body) ->
-      free_vars (id :: gamma) body in
-  List.stable_dedup multi ~compare:String.compare
+let free_vars expr =
+
+  let rec multi S.{ expr ; note = _ } =
+    match expr with
+    | S.Lit _ -> []
+    | S.Bin (_, lhs, rhs) -> multi lhs @ multi rhs
+    | S.Var id -> [id]
+    | S.App (f, x) -> multi f @ multi x
+    | S.Abs (id, body) ->
+        List.filter (multi body) ~f:(fun name -> not (String.equal id name))
+    | _ -> failwith "TODO" in
+
+  List.stable_dedup (multi expr) ~compare:String.compare
 
 (* factor out *)
-let lookup gamma id =
-  let predicate binding = String.(=) id binding.name in
-  let projection binding = binding.value in
-  Option.map (List.find gamma ~f:predicate) ~f:projection
+let lookup (gamma : (identifier, ty) bindings) (id : identifier) =
+  let predicate binding = String.equal id binding.Prelude.name in
+  Option.map (List.find gamma ~f:predicate) ~f:project_value
 
 let lookup_exn gamma id =
   Option.value_exn (lookup gamma id)
 
 type lift = {
-  lifted : (T.symbol, T.definition) bindings ;
+  terms : (T.symbol, T.definition) bindings ;
   body : T.term ;
 }
 
-(* lift all lambdas in a single top level definition *)
-let lift_definition { name ; value = definition } =
+let lift_program S.{ types ; body } =
 
-  (* set up local symbol generator *)
+  (* initialize local symbol generator *)
   let counter = ref 0 in
-  let gensym name () =
+  let gensym name =
     let index = !counter in
     counter := index + 1 ;
-    T.GenSym (name, index) in
+    index in
 
-  let rec lift gamma S.{ expr ; note } =
+  let rec lift gamma (S.{ expr ; note } as node) =
 
-    let output lifted body = { lifted ; body } in
     let translate expr = T.{ expr ; note } in
+    let output terms body = { terms ; body = translate body } in
+    let var id = match List.hd gamma with
+      | Some { name ; value = _ } ->
+          if String.equal name id then T.Arg id else T.Var id
+      | None -> Var id in
 
     match expr with
-    | S.Lit i -> output [] (translate (Lit i))
+    | S.Lit i -> output [] (Lit i)
+    | S.Bin (op, lhs, rhs) ->
+        let { terms = lhs_terms ; body = lhs_body } = lift gamma lhs in
+        let { terms = rhs_terms ; body = rhs_body } = lift gamma rhs in
+        output (lhs_terms @ rhs_terms) (Bin (op, lhs_body, rhs_body))
+    | S.Var id -> output [] (var id)
+    | S.App (lhs, rhs) ->
+        let { terms = lhs_terms ; body = lhs_body } = lift gamma lhs in
+        let { terms = rhs_terms ; body = rhs_body } = lift gamma rhs in
+        output (lhs_terms @ rhs_terms) (App (lhs_body, rhs_body))
+    | S.Abs (id, body) ->
+        let fvs = free_vars node in
+        let symbol = gensym "main" in
+        let { terms = body_terms ; body = body_body } =
+          let argument = binding id (project_domain_exn note) in
+          lift (argument :: gamma) body in
+        {
+          terms = begin
+            let definition = T.{
+              env = List.map fvs ~f:(fun v -> binding v (lookup_exn gamma v)) ;
+              arg = binding id (project_domain_exn note) ;
+              body = body_body ;
+            } in (binding symbol definition) :: body_terms
+          end ;
+          body = begin
+            let args = List.map fvs ~f:(fun v ->
+              T.{ expr = var v ; note = lookup_exn gamma v }
+            ) in
+            translate (Cls (symbol, args))
+          end ;
+        }
     | _ -> failwith "TODO" in
 
-  failwith "TODO"
-
-let lift_program S.{ types ; terms } =
-
-  let terms = failwith "TODO" in
+  let { terms ; body } = lift [] body in
 
   T.{
     types = types ;
     terms = terms ;
+    body = body ;
   }
-
-(*
-let lift term =
-
-  let counter = ref 0 in
-  let gensym () =
-    let out = !counter in
-    counter := out + 1 ;
-    out in
-  let empty = Map.empty (module Int) in
-
-  let rec process arg gamma S.{ expr ; note } =
-    let var id = if String.equal id arg then T.Var T.Arg else T.Var (T.Env id) in
-    match expr with
-    | S.Lit i ->
-        T.{
-          functions = empty ;
-          body = {
-            expr = Lit i ;
-            note = note ;
-          }
-        }
-    | S.Bin (op, lhs, rhs) ->
-        let T.{ functions = lhsf ; body = lhse } = process arg gamma lhs in
-        let T.{ functions = rhsf ; body = rhse } = process arg gamma rhs in
-        T.{
-          functions = Map.merge_disjoint_exn lhsf rhsf ;
-          body = {
-            expr = Bin (op, lhse, rhse) ;
-            note = note ;
-          }
-        }
-    | S.Var id ->
-        T.{
-          functions = empty ;
-          body = {
-            expr = var id ;
-            note = note ;
-          }
-        }
-    | S.App (f, x) ->
-        let T.{ functions = ff ; body = fe } = process arg gamma f in
-        let T.{ functions = xf ; body = xe } = process arg gamma x in
-        T.{
-          functions = Map.merge_disjoint_exn ff xf ;
-          body = {
-            expr = App (fe, xe) ;
-            note = note ;
-          }
-        }
-    | S.Abs (name, body) ->
-        let binding = { name ; value = STLC.project_domain_exn note } in
-        let fvs = free_vars [name] body in
-        let bind id = { name = id ; value = lookup_exn gamma id ; } in
-        let variable id = T.{
-          expr = var id ;
-          note = lookup_exn gamma id
-        } in
-        let T.{ functions = bf ; body = be } = process name (binding::gamma) body in
-        let def = T.{
-          env = List.map fvs ~f:bind ;
-          arg = binding ;
-          body = be ;
-        } in
-        let sym = gensym () in
-        T.{
-          functions = Map.set bf ~key:sym ~data:def ;
-          body = {
-            expr = Closure (sym, List.map fvs ~f:variable) ;
-            note = note ;
-          }
-        }
-
-  in process "" [] term
-*)
-
-let lift = failwith "TODO"

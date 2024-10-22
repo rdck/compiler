@@ -39,8 +39,10 @@ let store_type r = function
 
 let compile_program source =
 
-  let function_bindings = Map.to_alist source.S.functions in
-  let function_definitions = List.map function_bindings ~f:snd in
+  let function_definitions = List.map source.S.terms ~f:project_value in
+  let term_map =
+    let terms = List.map source.S.terms ~f:pair_of_binding in
+    Map.of_alist_exn (module Int) terms in
 
   (* a list of all function types in the program *)
   let function_types =
@@ -77,7 +79,7 @@ let compile_program source =
       } in
       T.Structure (reference_counter :: (List.map def.S.env ~f:atomicize)) in
 
-    Map.map source.S.functions ~f:environment in
+    Map.map term_map ~f:environment in
 
   (* get an ordered list of names in a function environment *)
   let get_environment_names fidx =
@@ -97,9 +99,9 @@ let compile_program source =
 
   (* filter functions by type *)
   let functions_of_type t =
-    let filter (_, d) = [%equal: ty] t (S.definition_type d) in
-    let bindings = List.filter function_bindings ~f:filter in
-    List.map bindings ~f:fst in
+    let filter { name = _ ; value = d } = [%equal: ty] t (S.definition_type d) in
+    let bindings = List.filter source.S.terms ~f:filter in
+    List.map bindings ~f:project_name in
 
   (* a map from each function type to the list of functions inhabiting it *)
   let type_to_functions =
@@ -205,7 +207,7 @@ let compile_program source =
 
       let to_case fidx =
 
-        let fdef = Map.find_exn source.S.functions fidx in
+        let fdef = Map.find_exn term_map fidx in
         let filter_arg_type id { name ; value } =
           if String.equal id name then Some value else None in
         let get_register_type = function

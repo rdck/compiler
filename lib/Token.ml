@@ -15,11 +15,12 @@ type token =
   | ShutParen
   | Equal
   | Bar
+  | Let
+  | In
   | Type
-  | Match
-  | End
   | Of
+  | Match
   | With
-  | Def
+  | End
   | EOF
 [@@deriving equal, show]

@@ -7,12 +7,12 @@ let compile path =
       let content = In_channel.read_all path in
       let lexed = Lex.tokenize (Lexing.from_string content) in
       let parsed = Option.value_exn (Pratt.parse_program lexed) in
-      let compiled = parsed
-        |> Annotate.annotate_exn
-        |> Lift.lift_program
-        |> Translate.compile_program
-        |> CmmBackend.compile_program in
-      printf "%s\n" (Cmm.represent compiled)
+      let annotated = Annotate.annotate_exn parsed in
+      let lifted = Lift.lift_program annotated in
+      let tac = Translate.compile_program lifted in
+      let cmm = CmmBackend.compile_program tac in
+      printf "%s\n" ([%show: TAC.program] tac)
+      (* printf "%s\n" (Cmm.represent cmm) *)
   | false ->
       printf "invalid path\n"
 
