@@ -79,7 +79,7 @@ module Expression = struct
     | App _ -> " "
     | Abs ({ name ; value = domain }, _) ->
         sprintf "λ %s : %s . " name (show_ty domain)
-    | Con (id, _) -> id
+    | Con (id, _) -> sprintf "%s " id
     | Mat _ -> "match" (* incomplete *)
 
 end
@@ -95,3 +95,14 @@ type program = {
   types : (identifier, type_specifier) bindings ;
   body : expression ;
 }
+
+let show_type_binding { name ; value } =
+  sprintf "type %s = %s" name ([%show: type_specifier] value)
+
+let show_program { types ; body } =
+  let types = List.map types ~f:show_type_binding in
+  let body = show_expression body in
+  sprintf "%s\n\n%s" (String.concat ~sep:"\n" types) body
+
+let pp_program f p =
+  Format.fprintf f "%s" (show_program p)

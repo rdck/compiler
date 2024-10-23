@@ -40,3 +40,14 @@ type program = {
   types : (identifier, type_specifier) bindings ;
   body : ty expression ;
 }
+
+(* TODO: factor out *)
+let show_type_binding { name ; value } =
+  sprintf "type %s = %s" name ([%show: type_specifier] value)
+
+let show_program { types ; body } =
+  let types = List.map types ~f:show_type_binding in
+  sprintf "%s\n\n%s" (String.concat ~sep:"\n" types) ""
+
+let pp_program f program =
+  Format.fprintf f "%s" (show_program program)

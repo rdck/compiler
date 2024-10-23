@@ -36,3 +36,4 @@ type program = {
   types : (identifier, type_specifier) bindings ;
   body : ty expression ;
 }
+[@@deriving show]

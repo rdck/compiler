@@ -28,11 +28,24 @@ type constructor = {
   name : identifier ;
   parameter : ty ;
 }
-[@@deriving equal, show]
+[@@deriving equal]
+
+let show_constructor { name ; parameter } =
+  sprintf "%s of %s" name ([%show: ty] parameter)
+
+let pp_constructor f c =
+  Format.fprintf f "%s" (show_constructor c)
 
 (* should have at least one constructor *)
 type type_specifier = constructor list
-[@@deriving equal, show]
+[@@deriving equal]
+
+let show_type_specifier spec =
+  let variants = List.map spec ~f:[%show: constructor] in
+  String.concat ~sep:" | " variants
+
+let pp_type_specifier f spec =
+  Format.fprintf f "%s" (show_type_specifier spec)
 
 let z64_symbol = "z64"
 let z64 = TypeSymbol z64_symbol

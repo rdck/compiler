@@ -13,6 +13,9 @@ type 't parse = {
 let parse result rest = { result ; rest }
 let return_parse result rest = Option.return (parse result rest)
 
+let parse_map f { result ; rest } =
+  { result = f result ; rest }
+
 let consume token = function
   | t :: ts -> if [%equal:token] t token then Some ts else None
   | _ -> None
@@ -35,6 +38,11 @@ let rec parse_type tokens =
     fun { result = rhs ; rest } -> return_parse (Arrow (lhs, rhs)) rest
   )
 
+let parse_pattern = function
+  | Constructor c :: Identifier p :: rest ->
+      return_parse T.{ name = c ; parameter = p } rest
+  | _ -> None
+
 let rec pratt p tokens =
 
   let open Option.Let_syntax in
@@ -44,6 +52,16 @@ let rec pratt p tokens =
         let%bind { result ; rest } = pratt 0 rest in
         let%bind rest = consume ShutParen rest in
         return_parse result rest
+    | Constructor id :: rest ->
+        let%bind { result ; rest } = pratt 5 rest in
+        return_parse (T.Con (id, result)) rest
+    (* TODO: handle case of no cases *)
+    | Match :: rest ->
+        let%bind { result = control ; rest } = pratt 0 rest in
+        let%bind rest = consume With rest in
+        let { result = cases ; rest } = parse_cases rest in
+        let%bind rest = consume End rest in
+        return_parse T.(Mat (control, cases)) rest
     | Identifier id :: rest -> return_parse (T.Var id) rest
     | Literal l :: rest -> return_parse (T.Lit l) rest
     | _ -> None in
@@ -87,6 +105,26 @@ and loop p lhs rest =
   | _ ->
       let f lhs rhs = T.(App (lhs, rhs)) in
       fold f 5 rest
+
+and parse_cases rest =
+
+  let parse_case rest =
+    let open Option.Let_syntax in
+    let%bind rest = consume Bar rest in
+    let%bind { result = pattern ; rest } = parse_pattern rest in
+    let%bind rest = consume Arrow rest in
+    let%bind { result = body ; rest } = pratt 0 rest in
+    return_parse (pattern, body) rest in
+
+  let rec parse_cases rest =
+    match parse_case rest with
+    | None -> parse [] rest
+    | Some { result ; rest } ->
+        let { result = results ; rest } = parse_cases rest in
+        parse (result :: results) rest in
+
+  let { result ; rest } = parse_cases rest in
+  parse_map List.rev (parse_cases rest)
 
 let parse_expression = pratt 0
 
