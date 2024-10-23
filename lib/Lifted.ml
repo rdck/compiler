@@ -15,6 +15,9 @@ type identifier = STLC.identifier
 type symbol = int
 [@@deriving equal, show]
 
+type pattern = Annotated.pattern
+[@@deriving equal, show]
+
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
@@ -22,6 +25,8 @@ type 'a node =
   | Arg of identifier
   | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
+  | Con of identifier * 'a expression
+  | Mat of 'a expression * (pattern * 'a expression) list
 and 'a expression = {
   expr : 'a node ;
   note : 'a ;

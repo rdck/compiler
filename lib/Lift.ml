@@ -11,6 +11,8 @@ module T = Lifted
 
 let free_vars expr =
 
+  let filter id = fun name -> not (String.equal id name) in
+
   let rec multi S.{ expr ; note = _ } =
     match expr with
     | S.Lit _ -> []
@@ -18,8 +20,14 @@ let free_vars expr =
     | S.Var id -> [id]
     | S.App (f, x) -> multi f @ multi x
     | S.Abs (id, body) ->
-        List.filter (multi body) ~f:(fun name -> not (String.equal id name))
-    | _ -> failwith "TODO" in
+        List.filter (multi body) ~f:(filter id)
+    | S.Con (c, p) -> multi p
+    | S.Mat (control, cases) ->
+        let cases_vars = List.map cases ~f:(fun (pattern, body) ->
+          List.filter (multi body) ~f:(filter pattern.parameter)
+        ) in
+        let control_vars = multi control in
+        List.concat (control_vars :: cases_vars) in
 
   List.stable_dedup (multi expr) ~compare:String.compare
 
@@ -86,7 +94,17 @@ let lift_program S.{ types ; body } =
             translate (Cls (symbol, args))
           end ;
         }
-    | _ -> failwith "TODO" in
+    | S.Con (c, p) ->
+        let { terms ; body } = lift gamma p in
+        output terms (Con (c, body))
+    | S.Mat (control, cases) ->
+        let { terms = control_terms ; body = control_body } = lift gamma control in
+        let (cases_terms, cases) = List.fold_map cases ~init:[] ~f:(
+          fun acc (pattern, case) ->
+            let { terms ; body } = lift gamma case in
+            (acc @ terms, (pattern, body))
+        ) in
+        output (control_terms @ cases_terms) (Mat (control_body, cases)) in
 
   let { terms ; body } = lift [] body in
 

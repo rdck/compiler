@@ -17,6 +17,9 @@ let lookup (gamma : ty environment) (id : S.identifier) =
   let projection binding = binding.value in
   Option.map (List.find gamma ~f:predicate) ~f:projection
 
+let forget_pattern T.{ name ; parameter ; parameter_type } =
+  S.{ name ; parameter }
+
 let rec forget_exn T.{ expr ; note } =
   match expr with
   | T.Lit i -> S.Lit i
@@ -30,7 +33,7 @@ let rec forget_exn T.{ expr ; note } =
       end
   | T.Con (id, p) -> S.Con (id, forget_exn p)
   | T.Mat (control, cases) ->
-      let f (pattern, body) = (pattern, forget_exn body) in
+      let f (pattern, body) = (forget_pattern pattern, forget_exn body) in
       S.Mat (forget_exn control, List.map cases ~f)
 
 type constructor_spec = {
@@ -116,27 +119,14 @@ let annotate program =
         let f ({ name ; parameter }, body) =
           let spec = lookup_constructor name in
           if [%equal: ty] (TypeSymbol spec.family) expect
-          then synth (binding parameter spec.parameter :: gamma) body
+          then
+            let%bind body = synth (binding parameter spec.parameter :: gamma) body in
+            Some (T.{ name ; parameter ; parameter_type = spec.parameter }, body)
           else None in
         let%bind annotated_cases = all (List.map cases ~f) in
-        let annotations = List.map annotated_cases ~f:(fun c -> c.note) in
+        let annotations = List.map annotated_cases ~f:(fun (_, c) -> c.note) in
         let%bind body_type = List.all_equal annotations ~equal:[%equal: ty] in
-        let patterns = List.map cases ~f:fst in
-        let zipped = List.zip_exn patterns annotated_cases in
-        return (Mat (control, zipped)) body_type in
-
-  (*
-  let values =
-
-    let f acc { name ; value } =
-      let gamma = List.map acc ~f:(fun { name ; value } -> binding name value.T.note) in
-      let%bind synthesized = synth gamma value in
-      return (binding name synthesized :: acc) in
-
-    fold_option f [] program.S.values in
-
-  let%bind values = values in
-  *)
+        return (Mat (control, annotated_cases)) body_type in
 
   let%bind body = synth [] program.S.body in
 

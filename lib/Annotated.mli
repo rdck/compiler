@@ -11,7 +11,11 @@ type identifier = string
 type binop = STLC.binop
 [@@deriving equal, show]
 
-type pattern = STLC.pattern
+type pattern = {
+  name : identifier ;
+  parameter : identifier ;
+  parameter_type : ty ;
+}
 [@@deriving equal, show]
 
 type 'a node =
