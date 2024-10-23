@@ -30,10 +30,11 @@ and 'a expression = {
   expr : 'a node ;
   note : 'a ;
 }
-[@@deriving equal, show]
+[@@deriving equal]
 
 type program = {
   types : (identifier, type_specifier) bindings ;
   body : ty expression ;
 }
-[@@deriving show]
+
+val represent_program : program -> string
