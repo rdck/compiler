@@ -17,11 +17,6 @@ type compilation = {
 let project_code x = x.code
 let project_reg x = x.reg
 
-(*
-let compile_program S.{ types ; terms } =
-  failwith ""
-*)
-
 let compile_program S.{ types ; terms ; body } =
 
   let compile_expression expr =

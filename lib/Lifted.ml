@@ -64,10 +64,10 @@ module Term = struct
     | Bin (Sub, _, _) -> " - "
     | Bin (Mul, _, _) -> " * "
     | Bin (Exp, _, _) -> " ^ "
-    | Var id -> sprintf "env.%s" id
+    | Var id -> id
     | Arg id -> id
     | App _ -> " "
-    | Cls (sym, _) -> show_symbol sym
+    | Cls (sym, _) -> sprintf "f%s" (show_symbol sym)
 
 end
 

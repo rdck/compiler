@@ -28,9 +28,16 @@ type expression =
   | Call of register * register
 [@@deriving equal, show]
 
+(*
+type count_operation =
+  | Inc
+  | Dec
+*)
+
 type instruction =
   | Store of register * ty * expression
   | Return of register
+  (* | Count of count_operation * register *)
 [@@deriving equal, show]
 
 type definition = {
