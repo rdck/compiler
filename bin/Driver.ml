@@ -1,38 +1,59 @@
 open Core
 open Compiler
 
+(* compilation mode *)
 type mode =
   | TAC
-  | C
+  | CMM
 
 (* stores each stage of compilation *)
 type compilation = {
-  tokens    : Token.token list  ;
-  ast       : STLC.program      ;
-  annotated : Annotated.program ;
-  lifted    : Lifted.program    ;
-  tac       : TAC.program       ;
-  cmm       : Cmm.program       ;
-  output    : string            ;
+  source        : string            ;
+  lexical       : Token.token list  ;
+  syntax        : STLC.program      ;
+  elaboration   : Annotated.program ;
+  apex          : Lifted.program    ;
+  triple        : TAC.program       ;
+  procedural    : Cmm.program       ;
 }
 
-let compile source = failwith ""
+let compile source =
 
-let represent =
-  failwith ""
+  (* run compilation *)
+  let lexical     = Lex.tokenize (Lexing.from_string source)        in
+  let syntax      = Option.value_exn (Pratt.parse_program lexical)  in
+  let elaboration = Annotate.annotate_exn syntax                    in
+  let apex        = Lift.lift_program elaboration                   in
+  let triple      = Translate.compile_program apex                  in
+  let procedural  = CmmBackend.compile_program triple               in
+
+  (* store each phase *)
+  {
+    source        ;
+    lexical       ;
+    syntax        ;
+    elaboration   ;
+    apex          ;
+    triple        ;
+    procedural    ;
+  }
+
+let represent compilation = function
+  | TAC -> TAC.show_program compilation.triple
+  | CMM -> Cmm.represent compilation.procedural
 
 let driver mode path =
 
   (* determine mode *)
   let mode = match mode with
   | Some "tac" -> TAC
-  | _ -> C in
+  | _ -> CMM in
 
   (* check path *)
   match Sys_unix.is_file_exn path with
   | true ->
-    let compilation = compile path in
-    printf "%s\n" (represent mode compilation)
+    let compilation = compile (In_channel.read_all path) in
+    printf "%s\n" (represent compilation mode)
   | false ->
     printf "invalid path\n"
 
@@ -46,37 +67,4 @@ let command =
     fun () -> driver mode path
   )
 
-
-(*
-let compile source =
-  match Sys_unix.is_file_exn path with
-  | true ->
-      let content = In_channel.read_all path in
-      let lexed = Lex.tokenize (Lexing.from_string content) in
-      let parsed = Option.value_exn (Pratt.parse_program lexed) in
-      let annotated = Annotate.annotate_exn parsed in
-      let lifted = Lift.lift_program annotated in
-      let tac = Translate.compile_program lifted in
-      let cmm = CmmBackend.compile_program tac in
-      printf "%s\n" (Cmm.represent cmm)
-  | false ->
-      printf "invalid path\n"
-
-let () = 
-
-  let command =
-
-    let param_handler path () =
-      match Sys_unix.is_file_exn path with
-      | true -> compile (In_channel.read_all path)
-
-    let readme () = "compiler readme" in
-    let param_spec = Command.Param.(anon ("path" %: string)) in
-    let param_handler path () = compile path in
-    Command.basic
-    ~summary:"recurse center simply typed lambda calculus compiler"
-    ~readme:readme
-    (Command.Param.map param_spec ~f:param_handler) in
-
-  Command_unix.run command
-*)
+let () = Command_unix.run ~version:"0.1" ~build_info:"build_info" command
