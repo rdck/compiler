@@ -1,6 +1,10 @@
 {
+
 open Token
 open Core
+
+exception UnexpectedCharacter of char
+
 }
 
 let digits = ['0'-'9']+
@@ -37,12 +41,22 @@ rule lex = parse
   | id as id { Identifier id }
   | constructor as id { Constructor id }
   | eof { EOF }
+  | _ as c { raise (UnexpectedCharacter c) }
 
 {
-let tokenize =
-  let rec f tokens buffer =
-    match lex buffer with
-    | EOF -> EOF :: tokens
-    | token -> f (token :: tokens) buffer
-  in Fn.compose List.rev (f [])
+
+let tokenize input =
+
+  let tokenize =
+    let rec f tokens buffer =
+      match lex buffer with
+      | EOF -> EOF :: tokens
+      | token -> f (token :: tokens) buffer
+    in Fn.compose List.rev (f []) in
+
+  try Result.return (tokenize input) with
+  | UnexpectedCharacter c ->
+      let message = sprintf "unexpected character: %c" c in
+      Or_error.error_string message
+
 }

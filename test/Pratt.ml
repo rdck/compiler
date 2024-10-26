@@ -8,15 +8,15 @@ module T = Alcotest
 
 let project_result p = p.result
 
-let tokenize_string =
-  Fn.compose Lex.tokenize Lexing.from_string
+let tokenize_exn s =
+  ok_exn (Lex.tokenize (Lexing.from_string s))
 
 let test_case_for_type input expect =
 
   let check_type name input expect =
     (* TODO: macro for pp_ty *)
     let testable_type = T.option @@ T.testable pp_ty [%equal: ty] in
-    let tokens = tokenize_string input in
+    let tokens = tokenize_exn input in
     let parsed = Option.map (parse_type tokens) ~f:project_result in
     T.check testable_type name parsed expect in
 
@@ -28,7 +28,7 @@ let test_case_for_expr input expect =
 
   let check_expr name input expect =
     let testable_expr = T.option @@ T.testable STLC.pp_expression [%equal: STLC.expression] in
-    let tokens = tokenize_string input in
+    let tokens = tokenize_exn input in
     let parsed = Option.map (parse_expression tokens) ~f:project_result in
     T.check testable_expr name parsed expect in
 
