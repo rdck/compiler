@@ -53,6 +53,10 @@ let compile path output_table =
   let%bind syntax = Pratt.parse_program lexical in
   write_ir Syntax ([%show: STLC.program] syntax) ;
 
+  (* elaboration *)
+  let%bind elaboration = Annotate.annotate_program syntax in
+  write_ir Elaboration (Annotated.represent_program elaboration) ;
+
   return ()
 
 

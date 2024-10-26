@@ -4,7 +4,4 @@
 
 open Types
 
-val annotate : STLC.program -> Annotated.program option
-val annotate_exn : STLC.program -> Annotated.program
-
-val forget_exn : ty Annotated.expression -> STLC.expression
+val annotate_program : STLC.program -> (Annotated.program, string) result

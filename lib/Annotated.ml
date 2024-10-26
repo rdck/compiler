@@ -33,6 +33,8 @@ and 'a expression = {
 }
 [@@deriving equal]
 
+let expression expr note = { expr ; note }
+
 (* TODO: This is too much of a duplicate of the printer module in STLC, for my taste. *)
 module Expression = struct
 

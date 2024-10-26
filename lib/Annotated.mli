@@ -32,6 +32,9 @@ and 'a expression = {
 }
 [@@deriving equal]
 
+(* curried expression constructor *)
+val expression : 'a node -> 'a -> 'a expression
+
 type program = {
   types : (identifier, type_specifier) bindings ;
   body : ty expression ;
