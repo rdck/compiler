@@ -43,7 +43,7 @@ let compile path output_table =
 
   (* write an IR to the appropriate path *)
   let write_ir ir content =
-    if output_table ir then write (ir_path path ir) content in
+    if output_table ir then write (ir_path basename ir) content in
 
   (* lexical analysis *)
   let%bind lexical = Lex.tokenize (Lexing.from_string source) in
@@ -83,7 +83,8 @@ let command =
   (
 
     (* define options *)
-    let%map_open.Command mode = flag "-c" (optional string) ~doc:"compilation mode"
+    let%map_open.Command elaboration = flag "--elaboration" no_arg ~doc:
+      "write out elaborated syntax tree"
     and path = anon ("path" %: string) in
 
     (* code to run with above options available *)
@@ -92,7 +93,7 @@ let command =
         | Source      -> false
         | Lexical     -> false
         | Syntax      -> false
-        | Elaboration -> false
+        | Elaboration -> elaboration
         | Apex        -> false
         | Triple      -> false
         | Procedural  -> false
