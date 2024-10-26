@@ -57,6 +57,6 @@ let tokenize input =
   try Result.return (tokenize input) with
   | UnexpectedCharacter c ->
       let message = sprintf "unexpected character: %c" c in
-      Or_error.error_string message
+      Result.fail message
 
 }

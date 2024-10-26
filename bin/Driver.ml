@@ -1,5 +1,6 @@
 open Core
 open Compiler
+open Result.Let_syntax
 
 type ir =
   | Source
@@ -13,8 +14,8 @@ type ir =
 
 let read_file path =
   match Sys_unix.is_file_exn path with
-  | true  -> Result.return (In_channel.read_all path)
-  | false -> Or_error.error_string "invalid path"
+  | true  -> return (In_channel.read_all path)
+  | false -> Result.fail "invalid path"
 
 let ir_path name =
   let extend extension = sprintf "%s.%s" name extension in
@@ -34,23 +35,26 @@ let write path content =
 
 let compile path output_table =
 
-  (* write content to the appropriate path *)
-  let write_ir ir content =
-    if output_table ir then write (ir_path path ir) content in
-
-  let open Result.Let_syntax in
-
   (* read source file *)
   let%bind source = read_file path in
+
+  (* determine name for output files *)
+  let basename = path |> Filename.basename |> Filename.chop_extension in
+
+  (* write an IR to the appropriate path *)
+  let write_ir ir content =
+    if output_table ir then write (ir_path path ir) content in
 
   (* lexical analysis *)
   let%bind lexical = Lex.tokenize (Lexing.from_string source) in
   write_ir Lexical ([%show: Token.token list] lexical) ;
 
   (* parsing *)
-  (* let%bind syntax = Pratt.parse_program lexical in *)
+  let%bind syntax = Pratt.parse_program lexical in
+  write_ir Syntax ([%show: STLC.program] syntax) ;
 
-  failwith "TODO"
+  return ()
+
 
   (*
   (* run compilation *)
@@ -60,29 +64,13 @@ let compile path output_table =
   let apex        = Lift.lift_program elaboration                   in
   let triple      = Translate.compile_program apex                  in
   let procedural  = CmmBackend.compile_program triple               in
-
-  (* store each phase *)
-  {
-    source        ;
-    lexical       ;
-    syntax        ;
-    elaboration   ;
-    apex          ;
-    triple        ;
-    procedural    ;
-  }
   *)
 
 let driver output_table path =
 
-  (* check path *)
-  match Sys_unix.is_file_exn path with
-  | true  ->
-      begin match compile (In_channel.read_all path) output_table with
-      | Ok x    -> printf "in ok"
-      | Error e -> printf "in error"
-      end
-  | false -> printf "invalid path\n"
+  match compile path output_table with
+  | Ok ()         -> ()
+  | Error message -> fprintf stderr "%s\n" message
 
 let command =
   Command.basic
