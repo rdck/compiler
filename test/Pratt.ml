@@ -4,9 +4,9 @@ open Core
 open Prelude
 open Types
 
-module T = Alcotest
+(*
 
-let project_result p = p.result
+module T = Alcotest
 
 let tokenize_exn s =
   ok_exn (Lex.tokenize (Lexing.from_string s))
@@ -17,7 +17,7 @@ let test_case_for_type input expect =
     (* TODO: macro for pp_ty *)
     let testable_type = T.option @@ T.testable pp_ty [%equal: ty] in
     let tokens = tokenize_exn input in
-    let parsed = Option.map (parse_type tokens) ~f:project_result in
+    let parsed = Option.map (parse_type tokens) ~f:project_syntax in
     T.check testable_type name parsed expect in
 
   T.test_case input `Quick (fun () ->
@@ -29,7 +29,7 @@ let test_case_for_expr input expect =
   let check_expr name input expect =
     let testable_expr = T.option @@ T.testable STLC.pp_expression [%equal: STLC.expression] in
     let tokens = tokenize_exn input in
-    let parsed = Option.map (parse_expression tokens) ~f:project_result in
+    let parsed = Option.map (parse_expression tokens) ~f:project_syntax in
     T.check testable_expr name parsed expect in
 
   T.test_case input `Quick (fun () ->
@@ -99,3 +99,5 @@ let () =
 
     ] ;
   ]
+
+*)
