@@ -10,7 +10,6 @@ type ir =
   | Apex
   | Triple
   | Procedural
-  | C99
 
 let read_file path =
   match Sys_unix.is_file_exn path with
@@ -26,8 +25,7 @@ let ir_path name =
     | Elaboration -> extend "elaboration"
     | Apex        -> extend "apex"
     | Triple      -> extend "triple"
-    | Procedural  -> extend "procedural"
-    | C99         -> extend "c"
+    | Procedural  -> extend "c"
 
 let write path content =
   let out_channel = Out_channel.create path in
@@ -57,18 +55,19 @@ let compile path output_table =
   let%bind elaboration = Annotate.annotate_program syntax in
   write_ir Elaboration (Annotated.represent_program elaboration) ;
 
+  (* lambda lifting *)
+  let apex = Lift.lift_program elaboration in
+  write_ir Apex (Lifted.show_program apex) ;
+
+  (* translation *)
+  let triple = Translate.compile_program apex in
+  write_ir Triple (TAC.show_program triple) ;
+
+  (* translation to procedural *)
+  let procedural = CmmBackend.compile_program triple in
+  write_ir Procedural (Cmm.represent procedural) ;
+
   return ()
-
-
-  (*
-  (* run compilation *)
-  let lexical     = Lex.tokenize (Lexing.from_string source)        in
-  let syntax      = Option.value_exn (Pratt.parse_program lexical)  in
-  let elaboration = Annotate.annotate_exn syntax                    in
-  let apex        = Lift.lift_program elaboration                   in
-  let triple      = Translate.compile_program apex                  in
-  let procedural  = CmmBackend.compile_program triple               in
-  *)
 
 let driver output_table path =
 
@@ -79,12 +78,16 @@ let driver output_table path =
 let command =
   Command.basic
   ~summary:"compiler"
-  ~readme:(fun () -> "more about the compiler")
+  ~readme:(fun () -> "")
   (
 
     (* define options *)
-    let%map_open.Command elaboration = flag "--elaboration" no_arg ~doc:
+    let%map_open.Command elaboration = flag "-elaboration" no_arg ~doc:
       "write out elaborated syntax tree"
+    and apex = flag "-apex" no_arg ~doc:
+      "write out lifted syntax tree"
+    and triple = flag "-triple" no_arg ~doc:
+      "write out three address code"
     and path = anon ("path" %: string) in
 
     (* code to run with above options available *)
@@ -94,10 +97,9 @@ let command =
         | Lexical     -> false
         | Syntax      -> false
         | Elaboration -> elaboration
-        | Apex        -> false
-        | Triple      -> false
-        | Procedural  -> false
-        | C99         -> false
+        | Apex        -> apex
+        | Triple      -> triple
+        | Procedural  -> true
       in driver output_table path
   )
 

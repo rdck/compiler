@@ -73,17 +73,6 @@ let concat_map xs f sep =
 let rec render_ty = function
   | TypeSymbol id -> id
   | Pointer t -> sprintf "%s*" (render_ty t)
-(*
-  | Enumeration ids ->
-      sprintf "enum { %s }" (String.concat ~sep:", " ids)
-  | Structure bindings ->
-      let f { name ; value } = sprintf "%s %s;" (show_ty value) name in
-      sprintf "struct { %s }" (concat_map bindings f " ")
-  | Union bindings ->
-      let f { name ; value } = sprintf "%s %s;" (show_ty value) name in
-      sprintf "union { %s }" (concat_map bindings f " ")
-  | Pointer t -> sprintf "%s*" (show_ty t)
-*)
 
 let render_binop = function
   | Add -> "+"
