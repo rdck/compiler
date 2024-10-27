@@ -29,7 +29,7 @@ let ir_path name =
 
 let write path content =
   let out_channel = Out_channel.create path in
-  Out_channel.fprintf out_channel "%s" content
+  Out_channel.fprintf out_channel "%s\n" content
 
 let compile path output_table =
 
