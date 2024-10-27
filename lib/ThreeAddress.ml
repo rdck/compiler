@@ -24,7 +24,7 @@ type register =
 let show_register = function
   | Reg id -> sprintf "r%d" id
   | Arg -> "arg"
-  | Env id -> sprintf "env.%s" id
+  | Env id -> sprintf "%s" id
 
 let pp_register f r = Format.fprintf f "%s" (show_register r)
 
