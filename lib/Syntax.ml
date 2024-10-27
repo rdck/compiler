@@ -7,7 +7,11 @@ open Prelude
 open Types
 
 type identifier = string
-[@@deriving equal, compare, sexp, show]
+[@@deriving equal, compare, sexp]
+
+let show_identifier id = id
+let pp_identifier f id =
+  Format.fprintf f "%s" (show_identifier id)
 
 type binop =
   | Add
