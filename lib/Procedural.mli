@@ -37,6 +37,7 @@ type assignable =
 
 type expression =
   | Assignable of assignable
+  | Address of assignable
   | Lit of int
   | Call of identifier * expression list
   | Bin of binop * expression * expression

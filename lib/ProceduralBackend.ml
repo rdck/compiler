@@ -12,14 +12,17 @@ let name_type index = sprintf "T%d" index
 let name_tag_type index = sprintf "T%dTag" index
 let name_eval index = sprintf "apply_t%d" index
 let name_environment_type index = sprintf "F%d" index
+let name_env_union index = sprintf "E%d" index
+let name_function index = sprintf "f%d" index
 let name_lambda t f = sprintf "%s_%s" (name_type t) (name_environment_type f)
 let name_argument = "arg"
 let name_allocation = "aptr"
 let name_environment = "env"
-let name_counter = "rc"
+let name_counter = "count"
 let name_tag = "tag"
 let name_void = "void"
 let name_closure = "fp"
+let name_union = "u"
 
 let register_var = function
   | S.Reg index -> T.Var (name_register index)
@@ -66,18 +69,14 @@ let compile_program source =
 
     match t with
     | TypeSymbol id -> T.TypeSymbol (translate_type_symbol id)
-    | Arrow _ -> T.TypeSymbol (name_type (lookup_type_index t)) in
+    | Arrow _ -> T.Pointer (T.TypeSymbol (name_type (lookup_type_index t))) in
 
   (* map from function index to environment type *)
   let environment_map =
 
     let environment def =
       let atomicize { name ; value } = { name ; value = atomic_type value } in
-      let reference_counter = {
-        name = name_counter;
-        value = T.TypeSymbol name_z64;
-      } in
-      T.Structure (reference_counter :: (List.map def.S.env ~f:atomicize)) in
+      T.Structure (List.map def.S.env ~f:atomicize) in
 
     Map.map term_map ~f:environment in
 
@@ -85,7 +84,7 @@ let compile_program source =
   let get_environment_names fidx =
     match Map.find_exn environment_map fidx with
     | Structure bindings ->
-        List.map (List.tl_exn bindings) ~f:(fun b -> b.name)
+        List.map bindings ~f:(fun b -> b.name)
     | _ -> failwith "function environment must be struct" in
 
   (* a list of structs representing each function environment *)
@@ -113,6 +112,9 @@ let compile_program source =
   let type_index_to_functions =
     Map.map_keys_exn (module Int) type_to_functions ~f:lookup_type_index in
 
+  (* lookup function for above map *)
+  let lookup_inhabitants = Map.find_exn type_index_to_functions in
+
   (* corresponding association list *)
   let type_index_with_functions = Map.to_alist type_index_to_functions in
 
@@ -124,14 +126,27 @@ let compile_program source =
       { name = name_tag_type type_index ; value = T.Enumeration ids } in
 
     List.map type_index_with_functions ~f:to_binding in
+
+  let closure_unions =
+
+    let union t =
+      let index = lookup_type_index t in
+      let inhabitants = lookup_inhabitants index in
+      let def = T.Union (List.map inhabitants ~f:(fun inhabitant -> {
+        name = name_function inhabitant ;
+        value = T.TypeSymbol (name_environment_type inhabitant) ;
+      })) in
+      { name = name_env_union index ; value = def } in
+
+    List.map function_types ~f:union in
   
   let closure_structs =
 
     let structure t =
       let index = lookup_type_index t in
       let def = T.Structure [
-        { name = name_tag         ; value = T.TypeSymbol (name_tag_type index)  } ;
-        { name = name_environment ; value = T.Pointer (T.TypeSymbol name_void)  } ;
+        { name = name_tag         ; value = T.TypeSymbol (name_tag_type index)    } ;
+        { name = name_union       ; value = T.TypeSymbol (name_env_union index)   } ;
       ] in
       { name = name_type index ; value = def } in
 
@@ -160,31 +175,24 @@ let compile_program source =
             let register_name = name_register (register_index_exn dest) in
             let register = register_var dest in
             let tidx = lookup_type_index t in
-            let eptr_type = T.Pointer (T.TypeSymbol (name_environment_type fidx)) in
-            let declaration = T.Declare (name_allocation, eptr_type) in
-            (* TODO: encode malloc structure properly *)
-            let malloc = T.Assign (
-              T.Var name_allocation,
-              T.Assignable (T.Var (sprintf "malloc(sizeof(*%s))" name_allocation))
-            ) in
-            let env_assignment = T.Assign (
-              T.Dot (register, name_environment),
-              T.Assignable (T.Var name_allocation)
-            ) in
+            let setup = T.[
+              Declare (register_name, atomic_type t) ;
+              Assign (
+                register,
+                Assignable (Var (sprintf "malloc(sizeof( *%s ))" register_name))
+              ) ;
+              Assign (
+                Arrow (register, name_tag),
+                Assignable (Var (name_lambda tidx fidx))
+              ) ;
+            ] in
             let arg_assignment =
               let assign_arg name value =
-                T.Assign (T.Arrow (T.Var name_allocation, name), register_value value) in
+                let arg_dest = T.(Dot (Dot (Arrow (register, name_union), name_function fidx), name)) in
+                T.(Assign (arg_dest, register_value value)) in
               let environment_names = get_environment_names fidx in
               List.map2_exn environment_names args ~f:assign_arg in
-            let block = declaration :: malloc :: env_assignment :: arg_assignment in
-            [
-              T.Declare (register_name, atomic_type t) ;
-              T.Assign (
-                T.Dot (register, name_tag),
-                T.Assignable (T.Var (name_lambda tidx fidx))
-              ) ;
-              T.Block block ;
-            ]
+            setup @ arg_assignment
         | S.Store (dest, t, v) ->
             let register_name = name_register (register_index_exn dest) in
             let register = register_var dest in
@@ -222,7 +230,7 @@ let compile_program source =
 
         let env_defi = T.Assign (
           T.Var name_environment,
-          T.Assignable (T.Dot (T.Var name_closure, name_environment))
+          T.Address (T.(Dot (Arrow (Var name_closure, name_union), name_function fidx)))
         ) in
         let body = List.concat (compile_instructions fdef.S.body get_register_type) in
 
@@ -237,11 +245,12 @@ let compile_program source =
         name = name_eval ft_index ;
         value = T.{
           args = [
-            { name = name_closure   ; value = T.TypeSymbol (name_type ft_index) ; } ;
+            (* { name = name_closure   ; value = T.TypeSymbol (name_type ft_index) ; } ; *)
+            { name = name_closure   ; value = atomic_type function_type         ; } ;
             { name = name_argument  ; value = atomic_type domain                ; } ;
           ] ;
           body = [
-            T.Switch (T.Assignable (T.Dot (T.Var name_closure, name_tag)), cases) ;
+            T.Switch (T.Assignable (T.Arrow (T.Var name_closure, name_tag)), cases) ;
           ] ;
           return_type = atomic_type codomain ;
         } ;
@@ -257,7 +266,7 @@ let compile_program source =
   let main = List.concat (compile_instructions source.S.body get_register_type) in
 
   T.{
-    types = function_enums @ closure_structs @ environments;
+    types = function_enums @ environments @ closure_unions @ closure_structs ;
     procedures = apply_procedures ;
     main = main ;
   }

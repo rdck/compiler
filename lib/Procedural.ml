@@ -38,6 +38,7 @@ type assignable =
 
 type expression =
   | Assignable of assignable
+  | Address of assignable
   | Lit of int
   | Call of identifier * expression list
   | Bin of binop * expression * expression
@@ -89,6 +90,7 @@ let rec render_assignable =
 let rec render_expression =
   let render = render_expression in function
     | Assignable a -> render_assignable a
+    | Address a -> sprintf "&%s" (render_assignable a)
     | Lit i -> sprintf "%dll" i
     | Call (id, args) ->
         sprintf "%s(%s)" id (concat_map args render ", ")
