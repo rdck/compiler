@@ -8,7 +8,7 @@ open Prelude
 type identifier = string
 [@@deriving equal, show]
 
-type binop = STLC.binop
+type binop = Syntax.binop
 [@@deriving equal, show]
 
 type pattern = {

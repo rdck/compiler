@@ -44,28 +44,28 @@ let compile path output_table =
     if output_table ir then write (ir_path basename ir) content in
 
   (* lexical analysis *)
-  let%bind lexical = Lex.tokenize (Lexing.from_string source) in
-  write_ir Lexical ([%show: Token.token list] lexical) ;
+  let%bind lexical = Lexer.tokenize (Lexing.from_string source) in
+  write_ir Lexical ([%show: Lexeme.lexeme list] lexical) ;
 
   (* parsing *)
   let%bind syntax = Pratt.parse_program lexical in
-  write_ir Syntax ([%show: STLC.program] syntax) ;
+  write_ir Syntax ([%show: Syntax.program] syntax) ;
 
   (* elaboration *)
-  let%bind elaboration = Annotate.annotate_program syntax in
-  write_ir Elaboration (Annotated.represent_program elaboration) ;
+  let%bind elaboration = Elaborate.elaborate_program syntax in
+  write_ir Elaboration (Elaboration.represent_program elaboration) ;
 
   (* lambda lifting *)
   let apex = Lift.lift_program elaboration in
-  write_ir Apex (Lifted.show_program apex) ;
+  write_ir Apex (Apex.show_program apex) ;
 
   (* translation *)
   let triple = Translate.compile_program apex in
-  write_ir Triple (TAC.show_program triple) ;
+  write_ir Triple (ThreeAddress.show_program triple) ;
 
   (* translation to procedural *)
-  let procedural = CmmBackend.compile_program triple in
-  write_ir Procedural (Cmm.represent procedural) ;
+  let procedural = ProceduralBackend.compile_program triple in
+  write_ir Procedural (Procedural.represent procedural) ;
 
   return ()
 

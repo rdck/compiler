@@ -2,8 +2,8 @@ open Core
 open Prelude
 open Types
 
-module S = TAC (* source *)
-module T = Cmm (* target *)
+module S = ThreeAddress (* source *)
+module T = Procedural   (* target *)
 
 (* naming scheme *)
 let name_z64 = "int64_t"
@@ -138,10 +138,10 @@ let compile_program source =
     List.map function_types ~f:structure in
 
   let compile_op = function
-    | STLC.Add -> T.Add
-    | STLC.Sub -> T.Sub
-    | STLC.Mul -> T.Mul
-    | STLC.Exp -> failwith "TODO: exponentiation" in
+    | Syntax.Add -> T.Add
+    | Syntax.Sub -> T.Sub
+    | Syntax.Mul -> T.Mul
+    | Syntax.Exp -> failwith "TODO: exponentiation" in
 
   let compile_instructions instructions register_type =
 

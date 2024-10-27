@@ -1,7 +1,5 @@
 (******************************************************************************)
-(* STLC -> ANNOTATED *)
+(* Syntax -> ANNOTATED *)
 (******************************************************************************)
 
-open Types
-
-val annotate_program : STLC.program -> (Annotated.program, string) result
+val elaborate_program : Syntax.program -> (Elaboration.program, string) result

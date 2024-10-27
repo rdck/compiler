@@ -1,15 +1,15 @@
 open Core
 open Token
-open Types
-module T = STLC (* target *)
+open Lexeme
+module T = Syntax (* target *)
 
 type 't parse = {
   result : 't ;
-  remaining : token list ;
+  remaining : lexeme list ;
 }
 
 let consume token = function
-  | t :: ts -> if [%equal:token] t token then Some ts else None
+  | t :: ts -> if [%equal: lexeme] t token then Some ts else None
   | _ -> None
 
 let rec parse_type tokens =

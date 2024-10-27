@@ -6,13 +6,13 @@ open Core
 open Prelude
 open Types
 
-type symbol = Lifted.symbol
+type symbol = Apex.symbol
 [@@deriving equal, show]
 
-type identifier = STLC.identifier
+type identifier = Syntax.identifier
 [@@deriving equal, show]
 
-type binop = STLC.binop
+type binop = Syntax.binop
 [@@deriving equal, show]
 
 type register =

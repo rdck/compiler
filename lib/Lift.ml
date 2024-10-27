@@ -6,8 +6,8 @@ open Core
 open Prelude
 open Types
 
-module S = Annotated
-module T = Lifted
+module S = Elaboration  (* source *)
+module T = Apex         (* target *)
 
 let free_vars expr =
 

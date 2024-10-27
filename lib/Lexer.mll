@@ -1,6 +1,6 @@
 {
 
-open Token
+open Lexeme
 open Core
 
 exception UnexpectedCharacter of char

@@ -1,5 +1,5 @@
 (******************************************************************************)
-(* STLC -> ANNOTATED *)
+(* Syntax -> ANNOTATED *)
 (******************************************************************************)
 
 open Core
@@ -7,8 +7,8 @@ open Prelude
 open Types
 open Result.Let_syntax
 
-module S = STLC       (* source *)
-module T = Annotated  (* target *)
+module S = Syntax       (* source *)
+module T = Elaboration  (* target *)
 
 type 'a environment = (S.identifier, 'a) bindings
 
@@ -25,7 +25,7 @@ type constructor_spec = {
   parameter : ty ;
 }
 
-let annotate_program program =
+let elaborate_program program =
 
   (* constructor symbol table *)
   let constructor_table =

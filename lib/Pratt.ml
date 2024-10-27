@@ -1,8 +1,8 @@
 open Core
 open Prelude
-open Token
+open Lexeme
 open Types
-open STLC
+open Syntax
 open Result.Let_syntax
 
 let fail = Result.fail
@@ -10,7 +10,7 @@ let fail_format fmt = fail (sprintf fmt)
 
 type 'a parse = {
   syntax : 'a ;
-  rest : token list ;
+  rest : lexeme list ;
 }
 
 (* projection functions *)
@@ -30,8 +30,8 @@ let parse_map f { syntax ; rest } =
 (* consume a token without using it *)
 let consume expect = function
   (* TODO: better representation of tokens *)
-  | t :: ts when [%equal: token] t expect -> return ts
-  | _ -> fail (sprintf "expected token: %s" ([%show: token] expect))
+  | t :: ts when [%equal: lexeme] t expect -> return ts
+  | _ -> fail (sprintf "expected token: %s" ([%show: lexeme] expect))
 
 let rec parse_type tokens =
 

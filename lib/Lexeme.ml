@@ -1,6 +1,6 @@
 open Core
 
-type token =
+type lexeme =
   | Identifier of string
   | Constructor of string
   | Literal of int

@@ -5,16 +5,16 @@
 open Prelude
 open Types
 
-type binop = STLC.binop
+type binop = Syntax.binop
 [@@deriving equal, show]
 
-type identifier = STLC.identifier
+type identifier = Syntax.identifier
 [@@deriving equal, show]
 
 type symbol = int
 [@@deriving equal, show]
 
-type pattern = Annotated.pattern
+type pattern = Elaboration.pattern
 [@@deriving equal, show]
 
 type 'a node =

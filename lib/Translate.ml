@@ -1,13 +1,13 @@
 (******************************************************************************)
-(* LIFTED -> TAC *)
+(* Apex -> ThreeAddress *)
 (******************************************************************************)
 
 open Core
 open Types
 open Prelude
 
-module S = Lifted (* source *)
-module T = TAC    (* target *)
+module S = Apex         (* source *)
+module T = ThreeAddress (* target *)
 
 type compilation = {
   code : T.instruction list ;

@@ -3,29 +3,27 @@
  (libraries core)
  (preprocess (pps ppx_jane ppx_deriving.show))
  (modules
+   Apex
+   Elaborate
+   Elaboration
+   Lexeme
+   Lexer
+   Lift
+   Pratt
    Prelude
    PrettyPrinter
-   STLC
-   Annotated
-   Annotate
-   Lifted
-   Lift
-   TAC
+   Procedural
+   ProceduralBackend
+   Syntax
+   ThreeAddress
    Translate
-   Example
-   Cmm
-   CmmBackend
-   Lex
-   Token
-   RecursiveDescent
-   Pratt
    Types
    )
  )
 
 (rule
- (target Lex.ml)
- (deps   Lex.mll)
+ (target Lexer.ml)
+ (deps   Lexer.mll)
  (action (chdir %{workspace_root}
           (run %{bin:ocamllex} -q -o %{target} %{deps}))))
 
@@ -33,5 +31,6 @@
  (dev
   (flags
    (:standard -w -unused-open)
+   (:standard -w -unused-constructor)
    (:standard -warn-error -A)
 )))

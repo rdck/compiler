@@ -6,10 +6,10 @@ open Core
 open Types
 open Prelude
 
-type identifier = STLC.identifier
+type identifier = Syntax.identifier
 [@@deriving equal, show]
 
-type binop = STLC.binop
+type binop = Syntax.binop
 [@@deriving equal, show]
 
 type pattern = {
@@ -35,7 +35,7 @@ and 'a expression = {
 
 let expression expr note = { expr ; note }
 
-(* TODO: This is too much of a duplicate of the printer module in STLC, for my taste. *)
+(* TODO: This is too much of a duplicate of the printer module in Syntax, for my taste. *)
 module Expression = struct
 
   open PrettyPrinter

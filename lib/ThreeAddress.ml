@@ -6,13 +6,13 @@ open Core
 open Prelude
 open Types
 
-type symbol = Lifted.symbol
+type symbol = Apex.symbol
 [@@deriving equal, show]
 
-type identifier = STLC.identifier
+type identifier = Syntax.identifier
 [@@deriving equal, show]
 
-type binop = STLC.binop
+type binop = Syntax.binop
 [@@deriving equal, show]
 
 type register =
@@ -38,7 +38,7 @@ type expression =
 let show_expression = function
   | Lit i -> sprintf "%d" i
   | Bin (op, lhs, rhs) ->
-      sprintf "%s %s %s" (STLC.show_binop op) (show_register lhs) (show_register rhs)
+      sprintf "%s %s %s" (Syntax.show_binop op) (show_register lhs) (show_register rhs)
   | Closure (f, args) ->
       let s = String.concat ~sep:" " (List.map args ~f:show_register) in
       sprintf "close f%d {%s}" f s

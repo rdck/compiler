@@ -1,5 +1,5 @@
 (******************************************************************************)
-(* Annotated -> Lifted *)
+(* Elaboration -> Apex *)
 (******************************************************************************)
 
-val lift_program : Annotated.program -> Lifted.program
+val lift_program : Elaboration.program -> Apex.program
