@@ -9,6 +9,7 @@ type ir =
   | Elaboration
   | Apex
   | Triple
+  | Tally
   | Procedural
 
 let read_file path =
@@ -25,6 +26,7 @@ let ir_path name =
     | Elaboration -> extend "elaboration"
     | Apex        -> extend "apex"
     | Triple      -> extend "triple"
+    | Tally       -> extend "tally"
     | Procedural  -> extend "c"
 
 let write path content =
@@ -63,6 +65,10 @@ let compile path output_table =
   let triple = Translate.compile_program apex in
   write_ir Triple (ThreeAddress.show_program triple) ;
 
+  (* insert reference counting operations *)
+  let tally = Count.count_program triple in
+  write_ir Tally (ThreeAddress.show_program tally) ;
+
   (* translation to procedural *)
   let procedural = ProceduralBackend.compile_program triple in
   write_ir Procedural (Procedural.represent procedural) ;
@@ -88,6 +94,8 @@ let command =
       "write out lifted syntax tree"
     and triple = flag "-triple" no_arg ~doc:
       "write out three address code"
+    and tally = flag "-tally" no_arg ~doc:
+      "write out three address code with reference counting"
     and path = anon ("path" %: string) in
 
     (* code to run with above options available *)
@@ -99,6 +107,7 @@ let command =
         | Elaboration -> elaboration
         | Apex        -> apex
         | Triple      -> triple
+        | Tally       -> tally
         | Procedural  -> true
       in driver output_table path
   )

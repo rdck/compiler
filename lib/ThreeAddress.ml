@@ -48,9 +48,22 @@ let show_expression = function
 let pp_expression f e =
   Format.fprintf f "%s" (show_expression e)
 
+type count_operation =
+  | Inc
+  | Dec
+[@@deriving equal]
+
+let show_count_operation = function
+  | Inc -> "inc"
+  | Dec -> "dec"
+
+let pp_count_operation f op =
+  Format.fprintf f "%s" (show_count_operation op)
+
 type instruction =
   | Store of register * ty * expression
   | Return of register
+  | Count of count_operation * register
 [@@deriving equal]
 
 let show_instruction = function
@@ -58,6 +71,8 @@ let show_instruction = function
       sprintf "%s : %s := %s" (show_register out) ([%show: ty] t) (show_expression value)
   | Return r ->
       sprintf "ret %s" (show_register r)
+  | Count (op, r) ->
+      sprintf "%s %s" (show_count_operation op) (show_register r)
 
 let pp_instruction f i =
   Format.fprintf f "%s" (show_instruction i)
