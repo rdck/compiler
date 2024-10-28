@@ -10,7 +10,7 @@ type symbol = Apex.symbol
 [@@deriving equal, show]
 
 type identifier = Syntax.identifier
-[@@deriving equal, show]
+[@@deriving equal, show, compare, sexp]
 
 type binop = Syntax.binop
 [@@deriving equal, show]
@@ -19,7 +19,7 @@ type register =
   | Reg of int
   | Arg
   | Env of identifier
-[@@deriving equal]
+[@@deriving equal, compare, sexp]
 
 let show_register = function
   | Reg id -> sprintf "r%d" id
@@ -112,3 +112,17 @@ let pp_program f p =
 
 let definition_type definition =
   Arrow (definition.arg.value, definition.return_type)
+
+module Register = struct
+
+  module T = struct
+
+    type t = register
+    [@@deriving compare, sexp]
+
+  end
+
+  include T
+  include Comparable.Make(T)
+
+end

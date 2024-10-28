@@ -21,6 +21,14 @@ type register =
   | Env of identifier
 [@@deriving equal, show]
 
+(* comparable registers *)
+module Register : sig
+
+  type t = register [@@deriving compare, sexp]
+  include Comparable.S with type t := t
+
+end
+
 type expression =
   | Lit of int
   | Bin of binop * register * register
@@ -55,3 +63,4 @@ type program = {
 [@@deriving show]
 
 val definition_type : definition -> ty
+

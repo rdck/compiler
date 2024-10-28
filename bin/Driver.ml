@@ -70,7 +70,7 @@ let compile path output_table =
   write_ir Tally (ThreeAddress.show_program tally) ;
 
   (* translation to procedural *)
-  let procedural = ProceduralBackend.compile_program triple in
+  let procedural = ProceduralBackend.compile_program tally in
   write_ir Procedural (Procedural.represent procedural) ;
 
   return ()

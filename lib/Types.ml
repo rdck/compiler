@@ -75,3 +75,11 @@ let project_codomain = function
   | Arrow (_, codomain) -> Some codomain 
 
 let project_codomain_exn t = Option.value_exn (project_codomain t)
+
+let is_symbol_type = function
+  | TypeSymbol _ -> true
+  | _ -> false
+
+let is_arrow_type = function
+  | Arrow _ -> true
+  | _ -> false

@@ -6,7 +6,7 @@ open Prelude
 open Types
 
 type identifier = string
-[@@deriving equal, show]
+[@@deriving equal, compare, sexp, show]
 
 type binop =
   | Add
