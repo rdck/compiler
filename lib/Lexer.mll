@@ -15,6 +15,7 @@ let whitespace = [ ' ' '\n' '\t' '\r' ]+
 rule lex = parse
 
   | whitespace { lex lexbuf }
+  | "(*" { comment lexbuf }
 
   | "+"     { Plus        }
   | "-"     { Minus       }
@@ -42,6 +43,10 @@ rule lex = parse
   | constructor as id { Constructor id }
   | eof { EOF }
   | _ as c { raise (UnexpectedCharacter c) }
+
+and comment = parse
+  | "*)" { lex lexbuf }
+  | _ { comment lexbuf }
 
 {
 
