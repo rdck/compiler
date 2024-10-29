@@ -8,8 +8,8 @@ exception UnexpectedCharacter of char
 }
 
 let digits = ['0'-'9']+
-let id = ['a'-'z'] ['a'-'z' '0'-'9']*
-let constructor = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
+let id = ['a'-'z'] ['a'-'z' '_' '0'-'9']*
+let constructor = ['A'-'Z'] ['a'-'z' 'A'-'Z' '_' '0'-'9']*
 let whitespace = [ ' ' '\n' '\t' '\r' ]+
 
 rule lex = parse
