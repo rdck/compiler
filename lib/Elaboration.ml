@@ -31,7 +31,7 @@ and 'a expression = {
   expr : 'a node ;
   note : 'a ;
 }
-[@@deriving equal]
+[@@deriving equal, show]
 
 let expression expr note = { expr ; note }
 

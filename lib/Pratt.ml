@@ -133,8 +133,7 @@ and parse_cases rest =
         let { syntax = results ; rest } = parse_cases rest in
         parse (syntax :: results) rest in
 
-  let { syntax ; rest } = parse_cases rest in
-  parse_map List.rev (parse_cases rest)
+  parse_cases rest
 
 let parse_expression = pratt 0
 

@@ -46,7 +46,8 @@ let elaborate_program program =
     List.fold constructor_maps ~init:empty ~f:Map.merge_disjoint_exn in
 
   (* constructor lookup function *)
-  let lookup_constructor = Map.find_exn constructor_table in
+  let lookup_constructor = Map.find constructor_table in
+  let lookup_constructor_exn = Map.find_exn constructor_table in
 
   (* elaborate an expression in a typing context *)
   let rec synth gamma expression =
@@ -87,7 +88,9 @@ let elaborate_program program =
         output (Abs (name, body)) (Arrow (dom, cod))
 
     | Con (c, p) ->
-        let { family ; parameter = expect } = lookup_constructor c in
+        let%bind { family ; parameter = expect } =
+          let error_message = sprintf "unknown constructor: %s" c in
+          Result.of_option (lookup_constructor c) ~error:error_message in
         let%bind actual = synth gamma p in
         if [%equal: ty] actual.T.note expect
         then output (Con (c, actual)) (TypeSymbol family)
@@ -96,7 +99,9 @@ let elaborate_program program =
     | Mat (control, cases) ->
         let%bind { expr = _ ; note = expect } as control = synth gamma control in
         let f ({ name ; parameter }, body) =
-          let spec = lookup_constructor name in
+          let%bind spec =
+            let error_message = sprintf "unknown constructor: %s" name in
+            Result.of_option (lookup_constructor name) ~error:error_message in
           if [%equal: ty] (TypeSymbol spec.family) expect
           then
             let%bind body = synth (binding parameter spec.parameter :: gamma) body in

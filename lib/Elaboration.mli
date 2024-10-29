@@ -30,7 +30,7 @@ and 'a expression = {
   expr : 'a node ;
   note : 'a ;
 }
-[@@deriving equal]
+[@@deriving equal, show]
 
 (* curried expression constructor *)
 val expression : 'a node -> 'a -> 'a expression
