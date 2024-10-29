@@ -11,6 +11,7 @@ let name_register index = sprintf "r%d" index
 let name_type index = sprintf "T%d" index
 let name_tag_type index = sprintf "T%dTag" index
 let name_eval index = sprintf "apply_t%d" index
+let name_drop index = sprintf "drop_t%d" index
 let name_environment_type index = sprintf "F%d" index
 let name_env_union index = sprintf "E%d" index
 let name_function index = sprintf "f%d" index
@@ -23,6 +24,7 @@ let name_tag = "tag"
 let name_void = "void"
 let name_closure = "fp"
 let name_union = "u"
+let name_free = "free"
 
 let register_var = function
   | S.Reg index -> T.Var (name_register index)
@@ -145,6 +147,7 @@ let compile_program source =
     let structure t =
       let index = lookup_type_index t in
       let def = T.Structure [
+        { name = name_counter     ; value = T.TypeSymbol name_z64                 } ;
         { name = name_tag         ; value = T.TypeSymbol (name_tag_type index)    } ;
         { name = name_union       ; value = T.TypeSymbol (name_env_union index)   } ;
       ] in
@@ -181,6 +184,7 @@ let compile_program source =
                 register,
                 Assignable (Var (sprintf "malloc(sizeof( *%s ))" register_name))
               ) ;
+              Assign (Arrow (register, name_counter), Lit 1) ;
               Assign (
                 Arrow (register, name_tag),
                 Assignable (Var (name_lambda tidx fidx))
@@ -199,7 +203,17 @@ let compile_program source =
             let register_decl = T.Declare (register_name, atomic_type t) in
             let assignment = T.Assign (register, compile_expression v) in
             [ register_decl ; assignment ]
-        | S.Return r -> [T.Return (register_value r)] in
+        | S.Return r -> [T.Return (register_value r)]
+        | S.Count (op, r) ->
+            let count = T.(Arrow (register_var r, name_counter)) in
+            T.[
+              begin match op with
+              | Inc -> Assign (count, Bin (Add, Assignable count, Lit 1))
+              | Dec ->
+                  let rt = lookup_type_index (register_type r) in
+                  Effect (Call (name_drop rt, [ Assignable (register_var r) ]))
+              end ;
+            ] in
 
     List.map instructions ~f:compile_instruction in
 
@@ -245,7 +259,6 @@ let compile_program source =
         name = name_eval ft_index ;
         value = T.{
           args = [
-            (* { name = name_closure   ; value = T.TypeSymbol (name_type ft_index) ; } ; *)
             { name = name_closure   ; value = atomic_type function_type         ; } ;
             { name = name_argument  ; value = atomic_type domain                ; } ;
           ] ;
@@ -258,6 +271,77 @@ let compile_program source =
 
     List.map function_types ~f:apply_procedure in
 
+  (* compile drop procedures *)
+  let drop_procedures =
+
+    (* compile drop procedure for function type *)
+    let drop_procedure function_type =
+
+      let functions   = functions_of_type function_type in
+      let type_index  = lookup_type_index function_type in
+
+      let closure = T.Var name_closure in
+      let count_assignable = T.(Arrow (closure, name_counter)) in
+      let tag = T.(Arrow (closure, name_tag)) in
+
+      (* compile case for function *)
+      let compile_case fidx = 
+
+        (* TODO: factor out (shared with apply procedure) *)
+        let env_decl = T.Declare (
+          name_environment,
+          Pointer (TypeSymbol (name_environment_type fidx))
+        ) in
+
+        let env_defi = T.(Assign (
+          Var name_environment,
+          Address (Dot (Arrow (Var name_closure, name_union), name_function fidx))
+        )) in
+
+        let function_definition = Map.find_exn term_map fidx in
+        let environment = function_definition.S.env in
+        let environment = List.filter environment ~f:(
+          fun { name = _ ; value = t } -> is_arrow_type t
+        ) in
+        let drop_statements = List.map environment ~f:(
+          fun { name ; value = t } ->
+            let type_index = lookup_type_index t in
+            let argument = T.(Assignable (Arrow (Var name_environment, name))) in
+            T.(Effect (Call (name_drop type_index, [ argument ])))
+        ) in
+        
+        T.{
+          tag = Assignable (Var (name_lambda type_index fidx)) ;
+          body = [ env_decl ; env_defi ; ] @ drop_statements ;
+        } in
+
+      (* switch statement *)
+      let switch = T.(
+        Switch (Assignable tag, List.map functions ~f:compile_case)
+      ) in
+
+      (* free call *)
+      let free = T.(Effect (Call (name_free, [ Assignable closure ] ))) in
+
+      (* function body *)
+      let body = T.[
+        Assign (count_assignable, Bin (Sub, Assignable count_assignable, Lit 1)) ;
+        If (Bin (LEQ, Assignable count_assignable, Lit 0), Block [ switch ; free ]) ;
+      ] in
+
+      T.{
+        name = name_drop type_index ;
+        value = {
+          args = [
+            { name = name_closure ; value = atomic_type function_type ; } ;
+          ] ;
+          body = body ;
+          return_type = TypeSymbol name_void ;
+        }
+      } in
+
+    List.map function_types ~f:drop_procedure in
+
   (* duplicated logic with above *)
   let get_register_type = function
     | S.Reg _ as r -> List.find_map_exn source.S.body ~f:(store_type r)
@@ -267,6 +351,6 @@ let compile_program source =
 
   T.{
     types = function_enums @ environments @ closure_unions @ closure_structs ;
-    procedures = apply_procedures ;
+    procedures = drop_procedures @ apply_procedures ;
     main = main ;
   }

@@ -63,4 +63,3 @@ type program = {
 [@@deriving show]
 
 val definition_type : definition -> ty
-

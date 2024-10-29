@@ -27,6 +27,10 @@ type binop =
   | Sub
   | Mul
   | Div
+  | LT
+  | LEQ
+  | GT
+  | GEQ
 [@@deriving equal]
 
 type assignable =
@@ -49,6 +53,8 @@ type statement =
   | Switch of expression * case list
   | Return of expression
   | Block of statement list
+  | If of expression * statement
+  | Effect of expression
 and case = {
   tag : expression ;
   body : statement list ;

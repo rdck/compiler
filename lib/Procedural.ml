@@ -28,6 +28,10 @@ type binop =
   | Sub
   | Mul
   | Div
+  | LT
+  | LEQ
+  | GT
+  | GEQ
 [@@deriving equal]
 
 type assignable =
@@ -50,6 +54,8 @@ type statement =
   | Switch of expression * case list
   | Return of expression
   | Block of statement list
+  | If of expression * statement
+  | Effect of expression
 and case = {
   tag : expression ;
   body : statement list ;
@@ -80,6 +86,10 @@ let render_binop = function
   | Sub -> "-"
   | Mul -> "*"
   | Div -> "/"
+  | LT  -> "<"
+  | LEQ -> "<="
+  | GT  -> ">"
+  | GEQ -> ">="
 
 let rec render_assignable =
   let render = render_assignable in function
@@ -102,12 +112,15 @@ let rec render_statement = function
   | Assign (a, v) ->
       sprintf "%s = %s;" (render_assignable a) (render_expression v)
   | Switch (control, cases) ->
-      let cases' = concat_map cases render_case "\n" in
-      sprintf "switch (%s) {\n%s\n}" (render_expression control) cases'
+      let cases = concat_map cases render_case "\n" in
+      sprintf "switch (%s) {\n%s\n}" (render_expression control) cases
   | Block statements ->
       sprintf "{\n%s\n}" (concat_map statements render_statement "\n")
   | Return e ->
       sprintf "return %s;" (render_expression e)
+  | If (condition, body) ->
+      sprintf "if (%s) %s" (render_expression condition) (render_statement body)
+  | Effect e -> sprintf "%s;" (render_expression e)
 and render_case { tag ; body } =
   let body' = concat_map body render_statement "\n" in
   sprintf "case %s:\n{\n%s\n} break;" (render_expression tag) body'
