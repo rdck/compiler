@@ -33,6 +33,8 @@ type expression =
   | Bin of binop * register * register
   | Closure of symbol * register list
   | Call of register * register
+  | Con of identifier * register
+  | Mat of register * register list * symbol list
 [@@deriving equal]
 
 let show_expression = function

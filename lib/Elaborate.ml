@@ -21,10 +21,12 @@ let lookup (gamma : ty environment) (id : S.identifier) =
   Option.map (List.find gamma ~f:predicate) ~f:projection
 
 type constructor_spec = {
-  family : string ;
-  parameter : ty ;
+  family    : string  ;
+  index     : int     ;
+  parameter : ty      ;
 }
 
+(* TODO: fail gracefully when constructors are not unique *)
 let elaborate_program program =
 
   (* constructor symbol table *)
@@ -32,9 +34,9 @@ let elaborate_program program =
 
     (* build map from a single type definition *)
     let constructor_map { name = family ; value } =
-      let f { name = constructor ; parameter } =
-        (constructor, { family ; parameter }) in
-      Map.of_alist_exn (module String) (List.map value ~f) in
+      let f index { name = constructor ; parameter } =
+        (constructor, { family ; index ; parameter }) in
+      Map.of_alist_exn (module String) (List.mapi value ~f) in
 
     (* total list of maps *)
     let constructor_maps = List.map program.S.types ~f:constructor_map in
@@ -48,6 +50,15 @@ let elaborate_program program =
   (* constructor lookup function *)
   let lookup_constructor = Map.find constructor_table in
   let lookup_constructor_exn = Map.find_exn constructor_table in
+
+  (* type symbol table *)
+  let type_table =
+    let alist = List.map program.S.types ~f:pair_of_binding in
+    Map.of_alist_exn (module String) alist in
+
+  (* type lookup function *)
+  let lookup_type = Map.find type_table in
+  let lookup_type_exn = Map.find_exn type_table in
 
   (* elaborate an expression in a typing context *)
   let rec synth gamma expression =
@@ -88,7 +99,7 @@ let elaborate_program program =
         output (Abs (name, body)) (Arrow (dom, cod))
 
     | Con (c, p) ->
-        let%bind { family ; parameter = expect } =
+        let%bind { family ; index = _ ; parameter = expect } =
           let error_message = sprintf "unknown constructor: %s" c in
           Result.of_option (lookup_constructor c) ~error:error_message in
         let%bind actual = synth gamma p in
@@ -97,22 +108,52 @@ let elaborate_program program =
         else fail "constructor parameter type mismatch"
 
     | Mat (control, cases) ->
+
+        (* synthesize control expression *)
         let%bind { expr = _ ; note = expect } as control = synth gamma control in
-        let f ({ name ; parameter }, body) =
-          let%bind spec =
-            let error_message = sprintf "unknown constructor: %s" name in
-            Result.of_option (lookup_constructor name) ~error:error_message in
-          if [%equal: ty] (TypeSymbol spec.family) expect
-          then
-            let%bind body = synth (binding parameter spec.parameter :: gamma) body in
-            return (T.{ name ; parameter ; parameter_type = spec.parameter }, body)
-          else fail "unexpected family" in
-        let%bind annotated_cases = Result.all (List.map cases ~f) in
-        let annotations = List.map annotated_cases ~f:(fun (_, c) -> c.note) in
-        let%bind body_type = Result.of_option ~error:"pattern match bodies don't match" (
-          List.all_equal annotations ~equal:[%equal: ty]
+
+        (* elaborate each case *)
+        let%bind annotated_cases = Result.all (List.map cases ~f:(
+          fun ({ name ; parameter }, body) ->
+            let%bind spec =
+              let error_message = sprintf "unknown constructor: %s" name in
+              Result.of_option (lookup_constructor name) ~error:error_message in
+            if [%equal: ty] (TypeSymbol spec.family) expect
+            then
+              let%bind body = synth (binding parameter spec.parameter :: gamma) body in
+              return (T.{ name ; parameter ; parameter_type = spec.parameter }, body)
+            else
+              fail "unexpected family"
+        )) in
+
+        (* sort by constructor *)
+        let sorted = List.sort annotated_cases ~compare:(
+          fun (lhs, _) (rhs, _) ->
+            let lhs = lookup_constructor_exn lhs.name in
+            let rhs = lookup_constructor_exn rhs.name in
+            Int.compare lhs.index rhs.index
         ) in
-        output (Mat (control, annotated_cases)) body_type in
+
+        (* exhaustiveness check *)
+        let%bind () =
+          let family_id = project_type_symbol_exn expect in
+          let constructors = lookup_type_exn family_id in
+          let constructors = List.map constructors ~f:(fun c -> c.name) in
+          let sorted_constructors = List.map sorted ~f:(
+            fun (pattern, _) -> pattern.name
+          ) in
+          if [%equal: string list] constructors sorted_constructors
+          then return ()
+          else fail "match statement not total" in
+
+        (* uniformity check *)
+        let%bind body_type =
+          let annotations = List.map sorted ~f:(fun (_, c) -> c.note) in
+          Result.of_option ~error:"pattern match bodies don't match" (
+            List.all_equal annotations ~equal:[%equal: ty]
+          ) in
+
+        output (Mat (control, sorted)) body_type in
 
   let%bind body = synth [] program.S.body in
 

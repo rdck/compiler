@@ -39,5 +39,8 @@ val project_codomain  : ty -> ty option
 val project_domain_exn    : ty -> ty
 val project_codomain_exn  : ty -> ty
 
+val project_type_symbol     : ty -> identifier option
+val project_type_symbol_exn : ty -> identifier
+
 val is_symbol_type  : ty -> bool
 val is_arrow_type   : ty -> bool

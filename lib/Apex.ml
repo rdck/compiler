@@ -56,6 +56,8 @@ module Term = struct
     | Arg _ -> Nullary
     | Cls (_, args) -> Nary args
     | App (f, x) -> Binary (5, Left, f, x)
+    | Con (_, p) -> Unary (5, p)
+    | Mat (control, cases) -> Nary (control :: List.map cases ~f:snd)
 
   let node_text { expr ; note = _ } =
     match expr with
@@ -68,6 +70,8 @@ module Term = struct
     | Arg id -> id
     | App _ -> " "
     | Cls (sym, _) -> sprintf "f%s" (show_symbol sym)
+    | Con (c, p) -> sprintf "%s " c
+    | Mat _ -> "match" (* incomplete *)
 
 end
 

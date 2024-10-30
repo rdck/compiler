@@ -24,9 +24,7 @@ type 'a node =
   | Arg of identifier (* function parameter *)
   | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
-  (* constructor *)
   | Con of identifier * 'a expression
-  (* pattern match *)
   | Mat of 'a expression * (pattern * 'a expression) list
 and 'a expression = {
   expr : 'a node ;

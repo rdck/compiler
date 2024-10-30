@@ -83,3 +83,10 @@ let is_symbol_type = function
 let is_arrow_type = function
   | Arrow _ -> true
   | _ -> false
+
+let project_type_symbol = function
+  | TypeSymbol id -> Some id
+  | _ -> None
+
+let project_type_symbol_exn t =
+  Option.value_exn ~message:"expected type symbol" (project_type_symbol t)
