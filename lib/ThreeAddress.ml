@@ -34,7 +34,7 @@ type expression =
   | Closure of symbol * register list
   | Call of register * register
   | Con of identifier * register
-  | Mat of register * register list * symbol list
+  | Mat of register * ty * register list * symbol list
 [@@deriving equal]
 
 let show_expression = function
@@ -46,6 +46,12 @@ let show_expression = function
       sprintf "close f%d {%s}" f s
   | Call (f, x) ->
       sprintf "call %s %s" (show_register f) (show_register x)
+  | Con (c, p) -> sprintf "%s %s" c (show_register p)
+  | Mat (control, _, environment, cases) ->
+      let show_symbol index = sprintf "f%d" index in
+      let cases = String.concat ~sep:" | " (List.map cases ~f:show_symbol) in
+      let environment = String.concat ~sep:" " (List.map environment ~f:show_register) in
+      sprintf "match %s under [%s] with %s" (show_register control) environment cases
 
 let pp_expression f e =
   Format.fprintf f "%s" (show_expression e)

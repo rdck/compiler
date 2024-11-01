@@ -35,7 +35,7 @@ type expression =
   | Closure of symbol * register list
   | Call of register * register
   | Con of identifier * register
-  | Mat of register * register list * symbol list
+  | Mat of register * ty * register list * symbol list
 [@@deriving equal, show]
 
 type count_operation =

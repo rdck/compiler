@@ -16,6 +16,9 @@ let name_environment_type index = sprintf "F%d" index
 let name_env_union index = sprintf "E%d" index
 let name_function index = sprintf "f%d" index
 let name_lambda t f = sprintf "%s_%s" (name_type t) (name_environment_type f)
+let name_user_tag id = sprintf "%s_tag" id
+let name_user_union id = sprintf "%s_union" id
+let name_user_struct id = id
 let name_argument = "arg"
 let name_allocation = "aptr"
 let name_environment = "env"
@@ -25,6 +28,7 @@ let name_void = "void"
 let name_closure = "fp"
 let name_union = "u"
 let name_free = "free"
+let name_match_closure = "matcher"
 
 let register_var = function
   | S.Reg index -> T.Var (name_register index)
@@ -43,6 +47,16 @@ let store_type r = function
   | _ -> None
 
 let compile_program source =
+
+  (* TODO: duplicated with elaboration *)
+  (* type symbol table *)
+  let type_table =
+    let alist = List.map source.S.types ~f:pair_of_binding in
+    Map.of_alist_exn (module String) alist in
+
+  (* type lookup function *)
+  let lookup_type = Map.find type_table in
+  let lookup_type_exn = Map.find_exn type_table in
 
   let function_definitions = List.map source.S.terms ~f:project_value in
   let term_map =
@@ -66,11 +80,11 @@ let compile_program source =
   let atomic_type t =
 
     let translate_type_symbol = function
-      | "z64" -> name_z64 (* TODO: standardize builtin type strings *)
-      | id -> id in
+      | "z64" -> T.TypeSymbol name_z64 (* TODO: standardize builtin type strings *)
+      | id -> T.Pointer (T.TypeSymbol id) in
 
     match t with
-    | TypeSymbol id -> T.TypeSymbol (translate_type_symbol id)
+    | TypeSymbol id -> translate_type_symbol id
     | Arrow _ -> T.Pointer (T.TypeSymbol (name_type (lookup_type_index t))) in
 
   (* map from function index to environment type *)
@@ -141,7 +155,7 @@ let compile_program source =
       { name = name_env_union index ; value = def } in
 
     List.map function_types ~f:union in
-  
+
   let closure_structs =
 
     let structure t =
@@ -155,6 +169,40 @@ let compile_program source =
 
     List.map function_types ~f:structure in
 
+  (* enumerations for user types *)
+  let user_enums =
+
+    let build_enum { name ; value = t } =
+      let tags = List.map t ~f:(fun c -> c.name) in
+      binding (name_user_tag name) (T.Enumeration tags) in
+
+    List.map source.types ~f:build_enum in
+
+  (* unions for user types *)
+  let user_unions =
+
+    let build_union { name ; value = t } =
+      let elements = List.map t ~f:(fun c ->
+        binding c.name (atomic_type c.parameter)
+      ) in
+
+      binding (name_user_union name) (T.Union elements) in
+
+    List.map source.types ~f:build_union in
+
+  (* structures for user types *)
+  let user_structures =
+
+    let build_struct { name ; value = t } =
+      let spec = T.Structure [
+        { name = name_counter ; value = T.TypeSymbol name_z64 } ;
+        { name = name_tag ; value = T.TypeSymbol (name_user_tag name) } ;
+        { name = name_union ; value = T.TypeSymbol (name_user_union name) } ;
+      ] in
+      binding (name_user_struct name) spec in
+
+    List.map source.types ~f:build_struct in
+
   let compile_op = function
     | Syntax.Add -> T.Add
     | Syntax.Sub -> T.Sub
@@ -167,10 +215,12 @@ let compile_program source =
       | S.Lit i -> T.Lit i
       | S.Bin (op, lhs, rhs) ->
           T.Bin (compile_op op, register_value lhs, register_value rhs)
-      | S.Closure _ -> failwith "UNREACHABLE"
       | S.Call (f, x) ->
           let ft_index' = lookup_type_index (register_type f) in
-          T.Call (name_eval ft_index', [ register_value f ; register_value x ]) in
+          T.Call (name_eval ft_index', [ register_value f ; register_value x ])
+      | S.Closure _ -> failwith "UNREACHABLE"
+      | S.Con _ -> failwith "UNREACHABLE"
+      | S.Mat _ -> failwith "UNREACHABLE" in
 
     let compile_instruction =
       function
@@ -197,6 +247,71 @@ let compile_program source =
               let environment_names = get_environment_names fidx in
               List.map2_exn environment_names args ~f:assign_arg in
             setup @ arg_assignment
+
+        | S.Store (dest, t, Con (c, p)) ->
+            let register_name = name_register (register_index_exn dest) in
+            let register = register_var dest in
+            T.[
+              Declare (register_name, atomic_type t) ;
+              Assign (register, Assignable (Var (sprintf "malloc(sizeof( *%s ))" register_name))) ;
+              Assign (
+                Arrow (register, name_tag),
+                Assignable (Var c)
+              ) ;
+              Assign (
+                Dot (Arrow (register, name_union), c),
+                Assignable (register_var p)
+              ) ;
+            ]
+
+        | S.Store (dest, t, Mat (control, control_type, environment, cases)) ->
+            let register_name = name_register (register_index_exn dest) in
+            let register = register_var dest in
+            let type_symbol = project_type_symbol_exn control_type in
+            let spec = lookup_type_exn type_symbol in
+            let zipped = List.zip_exn spec cases in
+            let gen_case ({ name ; parameter ; }, symbol) =
+
+              let closure_type = Types.Arrow (parameter, t) in
+              let closure_type_index = lookup_type_index closure_type in
+              let closure_var = T.Var name_match_closure in
+              let function_tag = name_lambda closure_type_index symbol in
+
+              let closure_setup = T.[
+                Declare (name_match_closure, atomic_type closure_type) ;
+                Assign (
+                  closure_var,
+                  Assignable (Var (sprintf "malloc(sizeof( *%s ))" name_match_closure))
+                ) ;
+                Assign (Arrow (closure_var, name_tag), Assignable (Var function_tag)) ;
+              ] in
+
+              let arg_assignment =
+                let assign_arg name value =
+                  let arg_dest = T.(Dot (Dot (Arrow (closure_var, name_union), name_function symbol), name)) in
+                  T.(Assign (arg_dest, register_value value)) in
+                let environment_names = get_environment_names symbol in
+                List.map2_exn environment_names environment ~f:assign_arg in
+
+              let parameter = T.(Assignable (Dot (Arrow (register_var control, name_union), name))) in
+
+              T.{
+                tag = Assignable (Var name) ;
+                body = closure_setup @ arg_assignment @ [
+                  Assign (
+                    register,
+                    Call (name_eval closure_type_index, [ Assignable closure_var ; parameter ])
+                  ) ;
+                ] ;
+            } in
+            T.[
+              Declare (register_name, atomic_type t) ;
+              Switch (
+                Assignable (Arrow (register_var control, name_tag)),
+                List.map zipped ~f:gen_case
+              ) ;
+            ]
+
         | S.Store (dest, t, v) ->
             let register_name = name_register (register_index_exn dest) in
             let register = register_var dest in
@@ -349,8 +464,17 @@ let compile_program source =
     | S.Env _ -> failwith "unexpected env in main" in
   let main = List.concat (compile_instructions source.S.body get_register_type) in
 
+
   T.{
-    types = function_enums @ environments @ closure_unions @ closure_structs ;
+    types =
+      user_enums
+      @ user_unions
+      @ user_structures
+      @ function_enums
+      @ environments
+      @ closure_unions
+      @ closure_structs
+      ;
     procedures = drop_procedures @ apply_procedures ;
     main = main ;
   }

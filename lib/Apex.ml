@@ -26,12 +26,14 @@ type 'a node =
   | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
   | Con of identifier * 'a expression
-  | Mat of 'a expression * (pattern * 'a expression) list
+  | Mat of 'a expression * 'a expression list * symbol list
 and 'a expression = {
   expr : 'a node ;
   note : 'a ;
 }
 [@@deriving equal, show]
+
+let expression expr note = { expr ; note }
 
 type term = ty expression
 [@@deriving equal]
@@ -57,7 +59,7 @@ module Term = struct
     | Cls (_, args) -> Nary args
     | App (f, x) -> Binary (5, Left, f, x)
     | Con (_, p) -> Unary (5, p)
-    | Mat (control, cases) -> Nary (control :: List.map cases ~f:snd)
+    | Mat (control, environment, cases) -> Nullary (* TODO *)
 
   let node_text { expr ; note = _ } =
     match expr with
@@ -67,7 +69,7 @@ module Term = struct
     | Bin (Mul, _, _) -> " * "
     | Bin (Exp, _, _) -> " ^ "
     | Var id -> id
-    | Arg id -> id
+    | Arg id -> String.uppercase id
     | App _ -> " "
     | Cls (sym, _) -> sprintf "f%s" (show_symbol sym)
     | Con (c, p) -> sprintf "%s " c

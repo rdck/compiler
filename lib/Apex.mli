@@ -25,12 +25,15 @@ type 'a node =
   | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
   | Con of identifier * 'a expression
-  | Mat of 'a expression * (pattern * 'a expression) list
+  | Mat of 'a expression * 'a expression list * symbol list
 and 'a expression = {
   expr : 'a node ;
   note : 'a ;
 }
 [@@deriving equal, show]
+
+(* curried expression constructor *)
+val expression : 'a node -> 'a -> 'a expression
 
 type term = ty expression
 [@@deriving equal, show]

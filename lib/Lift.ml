@@ -98,13 +98,53 @@ let lift_program S.{ types ; body } =
         let { terms ; body } = lift gamma p in
         output terms (Con (c, body))
     | S.Mat (control, cases) ->
+
+        (* TODO: shared with abs *)
+        let var id = match List.hd gamma with
+          | Some { name ; value = t } ->
+              let x = if String.equal name id then T.Arg id else T.Var id in
+              T.expression x t
+          | None -> T.expression (Var id) (lookup_exn gamma id) in
+
+        let fvs = free_vars node in
         let { terms = control_terms ; body = control_body } = lift gamma control in
-        let (cases_terms, cases) = List.fold_map cases ~init:[] ~f:(
-          fun acc (pattern, case) ->
-            let { terms ; body } = lift gamma case in
-            (acc @ terms, (pattern, body))
+
+        (* lift a case *)
+        let f (pattern, body) =
+
+          (* lift body *)
+          let { terms = body_terms ; body = body_body } =
+            let argument = binding pattern.S.parameter pattern.S.parameter_type in
+            lift (argument :: gamma) body in
+
+          let symbol = gensym "match" in
+          let definition = T.{
+            env = List.map fvs ~f:(fun v -> binding v (lookup_exn gamma v)) ;
+            arg = binding pattern.S.parameter pattern.S.parameter_type ;
+            body = body_body ;
+          } in
+          let closure_type = Arrow (pattern.parameter_type, body.note) in
+          let closure = T.expression (T.Cls (symbol, List.map fvs ~f:(fun v -> var v))) closure_type in
+          let argument = T.expression (T.Arg pattern.S.parameter) pattern.S.parameter_type in
+          {
+            terms = binding symbol definition :: body_terms ;
+            body = T.expression (T.App (closure, argument)) body.S.note ;
+          } in
+
+        let cases = List.map cases ~f in
+        let cases_terms = List.map cases ~f:(fun c -> c.terms) in
+        let cases_bodies = List.map cases ~f:(fun c -> c.body) in
+        let symbols = List.map cases_bodies ~f:(
+          fun expr -> match expr.expr with
+          | T.(App (f, _)) ->
+              begin match f.expr with
+              | Cls (symbol, _) -> symbol
+              | _ -> failwith "ill formed match compilation"
+              end
+          | _ -> failwith "ill formed match compilation"
         ) in
-        output (control_terms @ cases_terms) (Mat (control_body, cases)) in
+        let body = T.Mat (control_body, List.map fvs ~f:(fun v -> var v), symbols) in
+        output (control_terms @ List.concat cases_terms) body in
 
   let { terms ; body } = lift [] body in
 
