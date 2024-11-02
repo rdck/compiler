@@ -1,0 +1,4 @@
+recursive factorial : z64 -> z64 = λ n : z64 .
+  if n = 1 then 1 else n * factorial (n - 1) in
+
+factorial 5

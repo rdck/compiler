@@ -1,0 +1,14 @@
+type boolean =
+| True  of z64
+| False of z64
+
+type unit = | Unit of z64
+
+type int_option =
+| Some of z64
+| None of z64
+
+match Some 666 with
+| None y -> 999
+| Some x -> x
+end
