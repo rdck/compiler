@@ -37,6 +37,7 @@ rule lex = parse
   | "match" { Match       }
   | "with"  { With        }
   | "end"   { End         }
+  | "recursive" { Recursive }
 
   | digits as d { Literal (Int.of_string d) }
   | id as id { Identifier id }

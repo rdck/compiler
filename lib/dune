@@ -31,7 +31,5 @@
 (env
  (dev
   (flags
-   (:standard -w -unused-open)
-   (:standard -w -unused-constructor)
    (:standard -warn-error -A)
 )))

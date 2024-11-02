@@ -57,7 +57,6 @@ let elaborate_program program =
     Map.of_alist_exn (module String) alist in
 
   (* type lookup function *)
-  let lookup_type = Map.find type_table in
   let lookup_type_exn = Map.find_exn type_table in
 
   (* elaborate an expression in a typing context *)
@@ -97,6 +96,17 @@ let elaborate_program program =
     | Abs ({ name ; value = dom } as binding, body) ->
         let%bind { expr = _ ; note = cod } as body = synth (binding :: gamma) body in
         output (Abs (name, body)) (Arrow (dom, cod))
+
+    | Rec ({ name = id ; value = expect } as binding, definition, body) ->
+        let gamma = binding :: gamma in
+        let%bind { expr = _ ; note = actual } as definition = synth gamma definition in
+        begin match [%equal: ty] expect actual with
+        | true ->
+            let%bind { expr = _ ; note = body_type } as body = synth gamma body in
+            output (Rec (id, definition, body)) body_type
+        | false ->
+            fail "need more godel"
+        end
 
     | Con (c, p) ->
         let%bind { family ; index = _ ; parameter = expect } =

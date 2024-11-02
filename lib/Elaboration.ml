@@ -27,6 +27,7 @@ type 'a node =
   | Abs of identifier * 'a expression
   | Con of identifier * 'a expression
   | Mat of 'a expression * (pattern * 'a expression) list
+  | Rec of identifier * 'a expression * 'a expression
 and 'a expression = {
   expr : 'a node ;
   note : 'a ;
@@ -42,7 +43,7 @@ module Expression = struct
 
   type t = ty expression
 
-  let structure { expr ; note } =
+  let structure { expr ; note = _ } =
     match expr with
     | Lit _ -> Nullary
     | Bin (op, lhs, rhs) ->
@@ -59,8 +60,9 @@ module Expression = struct
     | Con (_, arg) -> Unary (5, arg)
     (* TODO: figure out how to show patterns *)
     | Mat (e, es) -> Nary (e :: List.map es ~f:snd)
+    | Rec (_, definition, body) -> Binary (6, Right, definition, body)
   
-  let node_text { expr ; note } =
+  let node_text { expr ; note = _ } =
     match expr with
     | Lit i -> sprintf "%d" i
     | Bin (Add, _, _) -> " + "
@@ -73,6 +75,8 @@ module Expression = struct
         sprintf "λ %s . " id
     | Con (id, _) -> sprintf "%s " id
     | Mat _ -> "match" (* incomplete *)
+    | Rec (id, _, _) ->
+        sprintf " as %s in " id
 
 end
 

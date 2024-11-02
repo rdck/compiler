@@ -6,7 +6,6 @@ open Syntax
 open Result.Let_syntax
 
 let fail = Result.fail
-let fail_format fmt = fail (sprintf fmt)
 
 type 'a parse = {
   syntax : 'a ;
@@ -23,15 +22,15 @@ let parse syntax rest = { syntax ; rest }
 (* return a parse in the result monad *)
 let return_parse syntax rest = return (parse syntax rest)
 
-(* apply a function to the syntax of a parse *)
-let parse_map f { syntax ; rest } =
-  { syntax = f syntax ; rest }
-
 (* consume a token without using it *)
 let consume expect = function
   (* TODO: better representation of tokens *)
   | t :: ts when [%equal: lexeme] t expect -> return ts
   | _ -> fail (sprintf "expected token: %s" ([%show: lexeme] expect))
+
+let parse_identifier = function
+  | Identifier id :: rest -> return_parse id rest
+  | _ -> fail "expected identifier"
 
 let rec parse_type tokens =
 
@@ -73,6 +72,15 @@ let rec pratt p tokens =
         return_parse (Mat (control, cases)) rest
     | Identifier id :: rest -> return_parse (Var id) rest
     | Literal l :: rest -> return_parse (Lit l) rest
+    | Recursive :: rest ->
+        let%bind { syntax = id ; rest } = parse_identifier rest in
+        let%bind rest = consume Colon rest in
+        let%bind { syntax = t ; rest } = parse_type rest in
+        let%bind rest = consume Equal rest in
+        let%bind { syntax = definition ; rest } = pratt 0 rest in
+        let%bind rest = consume In rest in
+        let%bind { syntax = body ; rest } = pratt 0 rest in
+        return_parse (Rec (binding id t, definition, body)) rest
     | _ -> fail "expected atom" in
 
   match tokens with

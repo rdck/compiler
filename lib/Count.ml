@@ -8,12 +8,6 @@ let dec r = Count (Dec, r)
 
 let register_map_of = Map.of_alist_exn (module Register)
 
-let count_closure_arguments m instructions =
-  List.concat_map instructions ~f:(function
-    | Closure (sym, args) -> failwith ""
-    | instruction -> [ instruction ]
-  )
-
 let count_term environment arg instructions =
 
   (* separate return statement *)
@@ -53,7 +47,7 @@ let count_term environment arg instructions =
 
   (* issue increment for closure arguments *)
   let body = List.concat_map body ~f:(function
-    | Store (_, _, Closure (sym, args)) as instruction ->
+    | Store (_, _, Closure (_, args)) as instruction ->
         let args = List.filter args ~f:(fun r ->
           is_arrow_type (lookup_register r)
         ) in
@@ -78,7 +72,7 @@ let count_term environment arg instructions =
 
   (* issue pair for function argument *)
   let body = match arg with
-  | Some { name ; value = t } when is_arrow_type t ->
+  | Some { name = _ ; value = t } when is_arrow_type t ->
       (inc Arg :: body) @ [ dec Arg ]
   | _ -> body in
 

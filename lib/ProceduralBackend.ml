@@ -20,7 +20,6 @@ let name_user_tag id = sprintf "%s_tag" id
 let name_user_union id = sprintf "%s_union" id
 let name_user_struct id = id
 let name_argument = "arg"
-let name_allocation = "aptr"
 let name_environment = "env"
 let name_counter = "count"
 let name_tag = "tag"
@@ -55,7 +54,6 @@ let compile_program source =
     Map.of_alist_exn (module String) alist in
 
   (* type lookup function *)
-  let lookup_type = Map.find type_table in
   let lookup_type_exn = Map.find_exn type_table in
 
   let function_definitions = List.map source.S.terms ~f:project_value in
@@ -193,7 +191,7 @@ let compile_program source =
   (* structures for user types *)
   let user_structures =
 
-    let build_struct { name ; value = t } =
+    let build_struct { name ; value = _ } =
       let spec = T.Structure [
         { name = name_counter ; value = T.TypeSymbol name_z64 } ;
         { name = name_tag ; value = T.TypeSymbol (name_user_tag name) } ;

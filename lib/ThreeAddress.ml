@@ -108,7 +108,7 @@ type program = {
   body : instruction list ;
 }
 
-let show_program { types ; terms ; body } =
+let show_program { types = _ ; terms ; body } =
   let f { name = k ; value = v } = sprintf "f%d %s" k (show_definition v) in
   let fs = List.map terms ~f in
   let body = List.map body ~f:show_instruction in

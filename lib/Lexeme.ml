@@ -16,6 +16,7 @@ type lexeme =
   | Equal
   | Bar
   | Let
+  | Recursive
   | In
   | Type
   | Of

@@ -21,13 +21,14 @@ let free_vars expr =
     | S.App (f, x) -> multi f @ multi x
     | S.Abs (id, body) ->
         List.filter (multi body) ~f:(filter id)
-    | S.Con (c, p) -> multi p
+    | S.Con (_, p) -> multi p
     | S.Mat (control, cases) ->
         let cases_vars = List.map cases ~f:(fun (pattern, body) ->
           List.filter (multi body) ~f:(filter pattern.parameter)
         ) in
         let control_vars = multi control in
-        List.concat (control_vars :: cases_vars) in
+        List.concat (control_vars :: cases_vars)
+    | S.Rec _ -> failwith "TODO" in
 
   List.stable_dedup (multi expr) ~compare:String.compare
 
@@ -48,7 +49,7 @@ let lift_program S.{ types ; body } =
 
   (* initialize local symbol generator *)
   let counter = ref 0 in
-  let gensym name =
+  let gensym _ =
     let index = !counter in
     counter := index + 1 ;
     index in
@@ -144,7 +145,10 @@ let lift_program S.{ types ; body } =
           | _ -> failwith "ill formed match compilation"
         ) in
         let body = T.Mat (control_body, List.map fvs ~f:(fun v -> var v), symbols) in
-        output (control_terms @ List.concat cases_terms) body in
+        output (control_terms @ List.concat cases_terms) body
+
+    | S.Rec _ -> failwith "TODO" in
+
 
   let { terms ; body } = lift [] body in
 

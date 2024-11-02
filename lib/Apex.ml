@@ -59,7 +59,7 @@ module Term = struct
     | Cls (_, args) -> Nary args
     | App (f, x) -> Binary (5, Left, f, x)
     | Con (_, p) -> Unary (5, p)
-    | Mat (control, environment, cases) -> Nullary (* TODO *)
+    | Mat _ -> Nullary (* TODO *)
 
   let node_text { expr ; note = _ } =
     match expr with
@@ -72,7 +72,7 @@ module Term = struct
     | Arg id -> String.uppercase id
     | App _ -> " "
     | Cls (sym, _) -> sprintf "f%s" (show_symbol sym)
-    | Con (c, p) -> sprintf "%s " c
+    | Con (c, _) -> sprintf "%s " c
     | Mat _ -> "match" (* incomplete *)
 
 end
@@ -104,7 +104,7 @@ type program = {
   body : term ;
 }
 
-let show_program { types ; terms ; body } =
+let show_program { types = _ ; terms ; body } =
   let f { name = k ; value = v } = sprintf "f%d %s" k (show_definition v) in
   let fs = List.map terms ~f in
   let body = show_term body in
