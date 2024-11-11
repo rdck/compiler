@@ -1,5 +1,3 @@
-open Core
-
 include SymbolData
 
 let binding k v = { name = k ; value = v }
