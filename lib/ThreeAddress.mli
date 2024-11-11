@@ -6,14 +6,7 @@ open Core
 open Symbol
 open Types
 
-type binop = Syntax.binop
-[@@deriving equal, show]
-
-type register =
-  | Reg of int
-  | Arg
-  | Env of identifier
-[@@deriving equal, show]
+include module type of ThreeAddressData
 
 (* comparable registers *)
 module Register : sig
@@ -23,39 +16,15 @@ module Register : sig
 
 end
 
-type expression =
-  | Lit of int
-  | Bin of binop * register * register
-  | Closure of symbol * register list
-  | Call of register * register
-  | Con of identifier * register
-  | Mat of register * ty * register list * symbol list
-[@@deriving equal, show]
-
-type count_operation =
-  | Inc
-  | Dec
-[@@deriving equal, show]
-
-type instruction =
-  | Store of register * ty * expression
-  | Return of register
-  | Count of count_operation * register
-[@@deriving equal, show]
-
-type definition = {
-  env : (identifier, ty) bindings ;
-  arg : (identifier, ty) binding ;
-  body : instruction list ;
-  return_type : ty ;
-}
-[@@deriving equal, show]
-
-type program = {
-  types : (identifier, type_specifier) bindings ;
-  terms : (symbol, definition) bindings ;
-  body : instruction list ;
-}
-[@@deriving show]
-
+val definition_env : definition -> (identifier, ty) bindings
+val definition_arg : definition -> (identifier, ty) binding
+val definition_body : definition -> instruction list
+val definition_return_type : definition -> ty
 val definition_type : definition -> ty
+
+val represent_binop       : binop       -> string
+val represent_register    : register    -> string
+val represent_expression  : expression  -> string
+val represent_instruction : instruction -> string
+val represent_definition  : definition  -> string
+val represent_program     : program     -> string

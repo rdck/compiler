@@ -23,6 +23,7 @@
    Syntax
    SyntaxData
    ThreeAddress
+   ThreeAddressData
    Translate
    Types
    TypeData
