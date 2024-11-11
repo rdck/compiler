@@ -61,7 +61,7 @@ let elaborate_program program =
   let rec synth gamma expression =
 
     let open S in
-    let output x t = return (T.expression x t) in
+    let output x t = return (T.annotate x t) in
 
     match expression with
 
@@ -79,7 +79,7 @@ let elaborate_program program =
 
     | Var id ->
         Result.of_option ~error:(sprintf "unbound variable %s" id) (
-          Option.map (lookup gamma id) ~f:(T.expression (Var id))
+          Option.map (lookup gamma id) ~f:(T.annotate (Var id))
         )
 
     | App (f, x) ->
@@ -144,7 +144,7 @@ let elaborate_program program =
 
         (* exhaustiveness check *)
         let%bind () =
-          let family_id = project_type_symbol_exn expect in
+          let family_id = ty_symbol_exn expect in
           let constructors = lookup_type_exn family_id in
           let constructors = List.map constructors ~f:(fun c -> c.name) in
           let sorted_constructors = List.map sorted ~f:(

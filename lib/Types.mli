@@ -3,27 +3,9 @@
 (******************************************************************************)
 
 open Core
+open Symbol
 
-type identifier = string
-[@@deriving equal, show]
-
-type ty =
-  | TypeSymbol of identifier
-  | Arrow of ty * ty
-[@@deriving equal, show, compare, sexp]
-
-val z64 : ty
-val z64_symbol : string
-
-type constructor = {
-  name : identifier ;
-  parameter : ty ;
-}
-[@@deriving equal, show]
-
-(* should have at least one constructor *)
-type type_specifier = constructor list
-[@@deriving equal, show]
+include module type of TypeData
 
 (* comparable types *)
 module Ty : sig
@@ -33,14 +15,21 @@ module Ty : sig
 
 end
 
-val project_domain    : ty -> ty option
-val project_codomain  : ty -> ty option
+val represent_ty : ty -> string
+val represent_constructor : constructor -> string
+val represent_type_specifier : type_specifier -> string
 
-val project_domain_exn    : ty -> ty
-val project_codomain_exn  : ty -> ty
+val z64 : ty
+val z64_symbol : string
 
-val project_type_symbol     : ty -> identifier option
-val project_type_symbol_exn : ty -> identifier
+val ty_domain    : ty -> ty option
+val ty_codomain  : ty -> ty option
+
+val ty_domain_exn    : ty -> ty
+val ty_codomain_exn  : ty -> ty
+
+val ty_symbol     : ty -> identifier option
+val ty_symbol_exn : ty -> identifier
 
 val is_symbol_type  : ty -> bool
 val is_arrow_type   : ty -> bool

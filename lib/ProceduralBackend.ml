@@ -265,7 +265,7 @@ let compile_program source =
         | S.Store (dest, t, Mat (control, control_type, environment, cases)) ->
             let register_name = name_register (register_index_exn dest) in
             let register = register_var dest in
-            let type_symbol = project_type_symbol_exn control_type in
+            let type_symbol = ty_symbol_exn control_type in
             let spec = lookup_type_exn type_symbol in
             let zipped = List.zip_exn spec cases in
             let gen_case ({ name ; parameter ; }, symbol) =
@@ -337,8 +337,8 @@ let compile_program source =
 
       let functions = functions_of_type function_type in
       let ft_index = lookup_type_index function_type in
-      let domain = project_domain_exn function_type in
-      let codomain = project_codomain_exn function_type in
+      let domain = ty_domain_exn function_type in
+      let codomain = ty_codomain_exn function_type in
 
       let to_case fidx =
 

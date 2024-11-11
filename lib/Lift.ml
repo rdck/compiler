@@ -78,13 +78,13 @@ let lift_program S.{ types ; body } =
         let fvs = free_vars node in
         let symbol = gensym "main" in
         let { terms = body_terms ; body = body_body } =
-          let argument = binding id (project_domain_exn note) in
+          let argument = binding id (ty_domain_exn note) in
           lift (argument :: gamma) body in
         {
           terms = begin
             let definition = T.{
               env = List.map fvs ~f:(fun v -> binding v (lookup_exn gamma v)) ;
-              arg = binding id (project_domain_exn note) ;
+              arg = binding id (ty_domain_exn note) ;
               body = body_body ;
             } in (binding symbol definition) :: body_terms
           end ;

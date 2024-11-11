@@ -7,6 +7,7 @@
    Count
    Elaborate
    Elaboration
+   ElaborationData
    Lexeme
    LexemeData
    Lexer
@@ -23,6 +24,7 @@
    ThreeAddress
    Translate
    Types
+   TypeData
    )
  )
 

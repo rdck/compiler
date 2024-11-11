@@ -3,49 +3,25 @@
 (******************************************************************************)
 
 open Core
+open Symbol
 
-type identifier = string
-[@@deriving equal, show, compare, sexp]
+include TypeData
 
-type ty =
-  | TypeSymbol of identifier
-  | Arrow of ty * ty
-[@@deriving equal, show, compare, sexp]
-
-let show_ty =
+let represent_ty =
   let rec show p = function
     | TypeSymbol id -> id
     | Arrow (dom, cod) ->
-        let dom' = show true dom in
-        let cod' = show false cod in
-        let s = sprintf "%s -> %s" dom' cod' in
+        let s = sprintf "%s -> %s" (show true dom) (show false cod) in
         if p then sprintf "(%s)" s else s in
   show false
 
-let pp_ty f t = Format.fprintf f "%s" (show_ty t)
+let represent_constructor { name ; parameter } =
+  sprintf "%s of %s" name (represent_ty parameter)
 
-type constructor = {
-  name : identifier ;
-  parameter : ty ;
-}
-[@@deriving equal]
-
-let show_constructor { name ; parameter } =
-  sprintf "%s of %s" name ([%show: ty] parameter)
-
-let pp_constructor f c =
-  Format.fprintf f "%s" (show_constructor c)
-
-(* should have at least one constructor *)
-type type_specifier = constructor list
-[@@deriving equal]
-
-let show_type_specifier spec =
-  let variants = List.map spec ~f:[%show: constructor] in
-  String.concat ~sep:" | " variants
-
-let pp_type_specifier f spec =
-  Format.fprintf f "%s" (show_type_specifier spec)
+let represent_type_specifier spec =
+  String.concat ~sep:" | " (
+    List.map spec ~f:represent_constructor
+  )
 
 let z64_symbol = "z64"
 let z64 = TypeSymbol z64_symbol
@@ -64,17 +40,17 @@ module Ty = struct
 
 end
 
-let project_domain = function
+let ty_domain = function
   | TypeSymbol _ -> None
   | Arrow (domain, _) -> Some domain
 
-let project_domain_exn t = Option.value_exn (project_domain t)
+let ty_domain_exn t = Option.value_exn (ty_domain t)
 
-let project_codomain = function
+let ty_codomain = function
   | TypeSymbol _ -> None
   | Arrow (_, codomain) -> Some codomain 
 
-let project_codomain_exn t = Option.value_exn (project_codomain t)
+let ty_codomain_exn t = Option.value_exn (ty_codomain t)
 
 let is_symbol_type = function
   | TypeSymbol _ -> true
@@ -84,9 +60,9 @@ let is_arrow_type = function
   | Arrow _ -> true
   | _ -> false
 
-let project_type_symbol = function
+let ty_symbol = function
   | TypeSymbol id -> Some id
   | _ -> None
 
-let project_type_symbol_exn t =
-  Option.value_exn ~message:"expected type symbol" (project_type_symbol t)
+let ty_symbol_exn t =
+  Option.value_exn ~message:"expected type symbol" (ty_symbol t)

@@ -6,32 +6,9 @@ open Core
 open Types
 open Symbol
 
-type binop = Syntax.binop
-[@@deriving equal, show]
+include ElaborationData
 
-type pattern = {
-  name : identifier ;
-  parameter : identifier ;
-  parameter_type : ty ;
-}
-[@@deriving equal, show]
-
-type 'a node =
-  | Lit of int
-  | Bin of binop * 'a expression * 'a expression
-  | Var of identifier
-  | App of 'a expression * 'a expression
-  | Abs of identifier * 'a expression
-  | Con of identifier * 'a expression
-  | Mat of 'a expression * (pattern * 'a expression) list
-  | Rec of identifier * 'a expression * 'a expression
-and 'a expression = {
-  expr : 'a node ;
-  note : 'a ;
-}
-[@@deriving equal, show]
-
-let expression expr note = { expr ; note }
+let annotate expr note = { expr ; note }
 
 (* TODO: This is too much of a duplicate of the printer module in Syntax, for my taste. *)
 module Expression = struct
@@ -79,16 +56,18 @@ end
 
 module Printer = PrettyPrinter.Make(Expression)
 
-type program = {
-  types : (identifier, type_specifier) bindings ;
-  body : ty expression ;
-}
+let represent_expression = Printer.print
 
-(* TODO: factor out *)
-let show_type_binding { name ; value } =
-  sprintf "type %s = %s" name ([%show: type_specifier] value)
+let represent_binop = Syntax.represent_binop
+
+let represent_pattern { name ; parameter ; parameter_type } =
+  sprintf "%s (%s : %s)" name parameter (represent_ty parameter_type)
 
 let represent_program { types ; body } =
+
+  let show_type_binding { name ; value } =
+    sprintf "type %s = %s" name ([%show: type_specifier] value) in
+
   let types = List.map types ~f:show_type_binding in
-  let body = Printer.print body in
+  let body = represent_expression body in
   sprintf "%s\n\n%s" (String.concat ~sep:"\n" types) body
