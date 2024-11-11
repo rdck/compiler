@@ -7,10 +7,10 @@ open Core
 type identifier = string
 
 type base_type =
-  | Word      (* w *)
-  | Long      (* l *)
-  | Single    (* s *)
-  | Double    (* d *)
+  | Word (* w *)
+  | Long (* l *)
+  | Single (* s *)
+  | Double (* d *)
 
 type extended_type =
   | BaseType of base_type
@@ -56,10 +56,10 @@ type operation =
   | Add
   | Sub
 
-type instruction = {
-  target : identifier ;
-  size : base_type ;
-  operation : operation ;
-  left : value ;
-  right : value ;
-}
+type instruction =
+  { target : identifier
+  ; size : base_type
+  ; operation : operation
+  ; left : value
+  ; right : value
+  }

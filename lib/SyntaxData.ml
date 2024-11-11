@@ -10,10 +10,10 @@ type binop =
 [@@deriving equal, show]
 
 (* We'll make this recursive later. *)
-type pattern = {
-  name : identifier ;
-  parameter : identifier ;
-}
+type pattern =
+  { name : identifier
+  ; parameter : identifier
+  }
 [@@deriving equal, show]
 
 type expression =
@@ -27,8 +27,8 @@ type expression =
   | Rec of (identifier, ty) binding * expression * expression
 [@@deriving equal, show]
 
-type program = {
-  types : (identifier, type_specifier) bindings ;
-  body : expression ;
-}
+type program =
+  { types : (identifier, type_specifier) bindings
+  ; body : expression
+  }
 [@@deriving equal, show]

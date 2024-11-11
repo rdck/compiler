@@ -46,22 +46,23 @@ type statement =
   | Block of statement list
   | If of expression * statement
   | Effect of expression
-and case = {
-  tag : expression ;
-  body : statement list ;
-}
+
+and case =
+  { tag : expression
+  ; body : statement list
+  }
 [@@deriving equal, show]
 
-type procedure = {
-  args : (identifier, ty) bindings ;
-  body : statement list ;
-  return_type : ty ;
-}
+type procedure =
+  { args : (identifier, ty) bindings
+  ; body : statement list
+  ; return_type : ty
+  }
 [@@deriving equal, show]
 
-type program = {
-  types : (identifier, type_definition) bindings ;
-  procedures : (identifier, procedure) bindings ;
-  main : statement list ;
-}
+type program =
+  { types : (identifier, type_definition) bindings
+  ; procedures : (identifier, procedure) bindings
+  ; main : statement list
+  }
 [@@deriving equal, show]

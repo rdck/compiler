@@ -5,8 +5,7 @@ open Symbol
 open Types
 
 (*
-
-module T = Alcotest
+   module T = Alcotest
 
 let tokenize_exn s =
   ok_exn (Lex.tokenize (Lexing.from_string s))
@@ -99,5 +98,4 @@ let () =
 
     ] ;
   ]
-
 *)
