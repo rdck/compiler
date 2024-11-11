@@ -3,6 +3,9 @@ open Core
 type identifier = string
 [@@deriving equal, show, compare, sexp]
 
+type symbol = int
+[@@deriving equal, show]
+
 type ('k, 'v) binding = {
   name  : 'k ;
   value : 'v ;

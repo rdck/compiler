@@ -6,9 +6,6 @@ open Core
 open Symbol
 open Types
 
-type symbol = Apex.symbol
-[@@deriving equal, show]
-
 type binop = Syntax.binop
 [@@deriving equal, show]
 

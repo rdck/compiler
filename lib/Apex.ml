@@ -6,34 +6,9 @@ open Core
 open Symbol
 open Types
 
-type binop = Syntax.binop
-[@@deriving equal, show]
+include ApexData
 
-type symbol = int
-[@@deriving equal, show]
-
-type pattern = Elaboration.pattern
-[@@deriving equal, show]
-
-type 'a node =
-  | Lit of int
-  | Bin of binop * 'a expression * 'a expression
-  | Var of identifier
-  | Arg of identifier
-  | Cls of symbol * 'a expression list
-  | App of 'a expression * 'a expression
-  | Con of identifier * 'a expression
-  | Mat of 'a expression * 'a expression list * symbol list
-and 'a expression = {
-  expr : 'a node ;
-  note : 'a ;
-}
-[@@deriving equal, show]
-
-let expression expr note = { expr ; note }
-
-type term = ty expression
-[@@deriving equal]
+let annotate expr note = { expr ; note }
 
 module Term = struct
 
@@ -76,36 +51,22 @@ end
 
 module Printer = PrettyPrinter.Make(Term)
 
-let show_term = Printer.print
+let represent_term = Printer.print
 
-let pp_term f e = Format.fprintf f "%s" (show_term e)
+let represent_binop   = Elaboration.represent_binop
+let represent_pattern = Elaboration.represent_pattern
 
-type definition = {
-  env : (identifier, ty) binding list ;
-  arg : (identifier, ty) binding ;
-  body : term ;
-}
-[@@deriving equal]
+let represent_ty_binding { name ; value = t } =
+  sprintf "%s : %s" name (represent_ty t)
 
-let show_definition { env ; arg ; body } =
-  let env' = [%show: (identifier, ty) binding list] env in
-  let arg' = [%show: (identifier, ty) binding] arg in
-  let body' = [%show: term] body in
-  sprintf "{%s} (%s) := %s" env' arg' body'
+let represent_definition { env ; arg ; body } =
+  let env = String.concat ~sep:", " @@ List.map env ~f:represent_ty_binding in
+  let arg = represent_ty_binding arg in
+  let body = represent_term body in
+  sprintf "{%s} (%s) := %s" env arg body
 
-let pp_definition f d = Format.fprintf f "%s" (show_definition d)
-
-type program = {
-  types : (identifier, type_specifier) bindings ;
-  terms : (symbol, definition) bindings ;
-  body : term ;
-}
-
-let show_program { types = _ ; terms ; body } =
-  let f { name = k ; value = v } = sprintf "f%d %s" k (show_definition v) in
+let represent_program { types = _ ; terms ; body } =
+  let f { name = k ; value = v } = sprintf "f%d %s" k (represent_definition v) in
   let fs = List.map terms ~f in
-  let body = show_term body in
+  let body = represent_term body in
   sprintf "%s\n\n%s" (String.concat ~sep:"\n\n" fs) body
-
-let pp_program f p =
-  Format.fprintf f "%s" (show_program p)

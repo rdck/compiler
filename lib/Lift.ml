@@ -41,7 +41,7 @@ let lookup_exn gamma id =
   Option.value_exn (lookup gamma id)
 
 type lift = {
-  terms : (T.symbol, T.definition) bindings ;
+  terms : (symbol, T.definition) bindings ;
   body : T.term ;
 }
 
@@ -104,8 +104,8 @@ let lift_program S.{ types ; body } =
         let var id = match List.hd gamma with
           | Some { name ; value = t } ->
               let x = if String.equal name id then T.Arg id else T.Var id in
-              T.expression x t
-          | None -> T.expression (Var id) (lookup_exn gamma id) in
+              T.annotate x t
+          | None -> T.annotate (Var id) (lookup_exn gamma id) in
 
         let fvs = free_vars node in
         let { terms = control_terms ; body = control_body } = lift gamma control in
@@ -125,11 +125,11 @@ let lift_program S.{ types ; body } =
             body = body_body ;
           } in
           let closure_type = Arrow (pattern.parameter_type, body.note) in
-          let closure = T.expression (T.Cls (symbol, List.map fvs ~f:(fun v -> var v))) closure_type in
-          let argument = T.expression (T.Arg pattern.S.parameter) pattern.S.parameter_type in
+          let closure = T.annotate (T.Cls (symbol, List.map fvs ~f:(fun v -> var v))) closure_type in
+          let argument = T.annotate (T.Arg pattern.S.parameter) pattern.S.parameter_type in
           {
             terms = binding symbol definition :: body_terms ;
-            body = T.expression (T.App (closure, argument)) body.S.note ;
+            body = T.annotate (T.App (closure, argument)) body.S.note ;
           } in
 
         let cases = List.map cases ~f in

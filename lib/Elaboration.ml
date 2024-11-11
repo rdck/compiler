@@ -10,8 +10,7 @@ include ElaborationData
 
 let annotate expr note = { expr ; note }
 
-(* TODO: This is too much of a duplicate of the printer module in Syntax, for my taste. *)
-module Expression = struct
+module Term = struct
 
   open PrettyPrinter
 
@@ -54,9 +53,9 @@ module Expression = struct
 
 end
 
-module Printer = PrettyPrinter.Make(Expression)
+module Printer = PrettyPrinter.Make(Term)
 
-let represent_expression = Printer.print
+let represent_term = Printer.print
 
 let represent_binop = Syntax.represent_binop
 
@@ -69,5 +68,5 @@ let represent_program { types ; body } =
     sprintf "type %s = %s" name ([%show: type_specifier] value) in
 
   let types = List.map types ~f:show_type_binding in
-  let body = represent_expression body in
+  let body = represent_term body in
   sprintf "%s\n\n%s" (String.concat ~sep:"\n" types) body

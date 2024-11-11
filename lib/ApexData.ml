@@ -5,23 +5,18 @@ open Types
 type binop = Syntax.binop
 [@@deriving equal, show]
 
-type pattern = {
-  name : identifier ;
-  parameter : identifier ;
-  parameter_type : ty ;
-}
+type pattern = Elaboration.pattern
 [@@deriving equal, show]
 
-(* By this time, patterns must be ordered by constructor. *)
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
-  | Var of identifier
+  | Var of identifier (* from environment *)
+  | Arg of identifier (* function parameter *)
+  | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
-  | Abs of identifier * 'a expression
   | Con of identifier * 'a expression
-  | Mat of 'a expression * (pattern * 'a expression) list
-  | Rec of identifier * 'a expression * 'a expression
+  | Mat of 'a expression * 'a expression list * symbol list
 and 'a expression = {
   expr : 'a node ;
   note : 'a ;
@@ -31,8 +26,16 @@ and 'a expression = {
 type term = ty expression
 [@@deriving equal, show]
 
+type definition = {
+  env : (identifier, ty) bindings ;
+  arg : (identifier, ty) binding ;
+  body : term ;
+}
+[@@deriving equal, show]
+
 type program = {
   types : (identifier, type_specifier) bindings ;
+  terms : (symbol, definition) bindings ;
   body : term ;
 }
 [@@deriving equal, show]
