@@ -51,7 +51,7 @@ let compile path output_table =
 
   (* parsing *)
   let%bind syntax = Pratt.parse_program lexical in
-  write_ir Syntax ([%show: Syntax.program] syntax) ;
+  write_ir Syntax (Syntax.represent_program syntax) ;
 
   (* elaboration *)
   let%bind elaboration = Elaborate.elaborate_program syntax in
@@ -59,19 +59,19 @@ let compile path output_table =
 
   (* lambda lifting *)
   let apex = Lift.lift_program elaboration in
-  write_ir Apex (Apex.show_program apex) ;
+  write_ir Apex (Apex.represent_program apex) ;
 
   (* translation *)
   let triple = Translate.compile_program apex in
-  write_ir Triple (ThreeAddress.show_program triple) ;
+  write_ir Triple (ThreeAddress.represent_program triple) ;
 
   (* insert reference counting operations *)
   let tally = Count.count_program triple in
-  write_ir Tally (ThreeAddress.show_program tally) ;
+  write_ir Tally (ThreeAddress.represent_program tally) ;
 
   (* translation to procedural *)
   let procedural = ProceduralBackend.compile_program tally in
-  write_ir Procedural (Procedural.represent procedural) ;
+  write_ir Procedural (Procedural.represent_program procedural) ;
 
   return ()
 
