@@ -1,5 +1,5 @@
 open Core
-open Prelude
+open Symbol
 open Types
 
 module S = ThreeAddress (* source *)
@@ -56,7 +56,7 @@ let compile_program source =
   (* type lookup function *)
   let lookup_type_exn = Map.find_exn type_table in
 
-  let function_definitions = List.map source.S.terms ~f:project_value in
+  let function_definitions = List.map source.S.terms ~f:binding_value in
   let term_map =
     let terms = List.map source.S.terms ~f:pair_of_binding in
     Map.of_alist_exn (module Int) terms in
@@ -114,7 +114,7 @@ let compile_program source =
   let functions_of_type t =
     let filter { name = _ ; value = d } = [%equal: ty] t (S.definition_type d) in
     let bindings = List.filter source.S.terms ~f:filter in
-    List.map bindings ~f:project_name in
+    List.map bindings ~f:binding_name in
 
   (* a map from each function type to the list of functions inhabiting it *)
   let type_to_functions =

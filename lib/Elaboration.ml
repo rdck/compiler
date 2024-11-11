@@ -4,10 +4,7 @@
 
 open Core
 open Types
-open Prelude
-
-type identifier = Syntax.identifier
-[@@deriving equal, show]
+open Symbol
 
 type binop = Syntax.binop
 [@@deriving equal, show]

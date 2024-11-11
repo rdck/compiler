@@ -8,14 +8,18 @@
    Elaborate
    Elaboration
    Lexeme
+   LexemeData
    Lexer
+   Lexical
    Lift
    Pratt
-   Prelude
    PrettyPrinter
    Procedural
    ProceduralBackend
+   Symbol
+   SymbolData
    Syntax
+   SyntaxData
    ThreeAddress
    Translate
    Types

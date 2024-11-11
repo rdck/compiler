@@ -2,39 +2,9 @@
 (* SIMPLY TYPED LAMBDA CALCULUS *)
 (******************************************************************************)
 
-open Prelude
-open Types
+include module type of SyntaxData
 
-type identifier = string
-[@@deriving equal, compare, sexp, show]
-
-type binop =
-  | Add
-  | Sub
-  | Mul
-  | Exp
-[@@deriving equal, show]
-
-(* We'll make this recursive later. *)
-type pattern = {
-  name : identifier ;
-  parameter : identifier ;
-}
-[@@deriving equal, show]
-
-type expression =
-  | Lit of int
-  | Bin of binop * expression * expression
-  | Var of identifier
-  | App of expression * expression
-  | Abs of (identifier, ty) binding * expression
-  | Con of identifier * expression
-  | Mat of expression * (pattern * expression) list
-  | Rec of (identifier, ty) binding * expression * expression
-[@@deriving equal, show]
-
-type program = {
-  types : (identifier, type_specifier) bindings ;
-  body : expression ;
-}
-[@@deriving show]
+val represent_binop : binop -> string
+val represent_pattern : pattern -> string
+val represent_expression : expression -> string
+val represent_program : program -> string

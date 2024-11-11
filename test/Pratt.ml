@@ -1,7 +1,7 @@
 open Compiler
 open Pratt
 open Core
-open Prelude
+open Symbol
 open Types
 
 (*

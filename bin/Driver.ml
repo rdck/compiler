@@ -47,7 +47,7 @@ let compile path output_table =
 
   (* lexical analysis *)
   let%bind lexical = Lexer.tokenize (Lexing.from_string source) in
-  write_ir Lexical ([%show: Lexeme.lexeme list] lexical) ;
+  write_ir Lexical (Lexical.represent_program lexical) ;
 
   (* parsing *)
   let%bind syntax = Pratt.parse_program lexical in

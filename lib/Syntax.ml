@@ -3,53 +3,19 @@
 (******************************************************************************)
 
 open Core
-open Prelude
 open Types
+open Symbol
 
-type identifier = string
-[@@deriving equal, compare, sexp]
+include SyntaxData
 
-let show_identifier id = id
-let pp_identifier f id =
-  Format.fprintf f "%s" (show_identifier id)
-
-type binop =
-  | Add
-  | Sub
-  | Mul
-  | Exp
-[@@deriving equal]
-
-let show_binop = function
+let represent_binop = function
   | Add -> "+"
   | Sub -> "-"
   | Mul -> "*"
   | Exp -> "^"
 
-let pp_binop f op = Format.fprintf f "%s" (show_binop op)
-
-type pattern = {
-  name : identifier ;
-  parameter : identifier ;
-}
-[@@deriving equal]
-
-let show_pattern { name ; parameter } =
+let represent_pattern { name ; parameter } =
   sprintf "%s %s" name parameter
-
-let pp_pattern f p =
-  Format.fprintf f "%s" (show_pattern p)
-
-type expression =
-  | Lit of int
-  | Bin of binop * expression * expression
-  | Var of identifier
-  | App of expression * expression
-  | Abs of (identifier, ty) binding * expression
-  | Con of identifier * expression
-  | Mat of expression * (pattern * expression) list
-  | Rec of (identifier, ty) binding * expression * expression
-[@@deriving equal]
 
 module Expression = struct
 
@@ -94,23 +60,14 @@ end
 
 module Printer = PrettyPrinter.Make(Expression)
 
-let show_expression = Printer.print
+let represent_expression = Printer.print
 
-let pp_expression f e =
-  Format.fprintf f "%s" (show_expression e)
+let represent_program { types ; body } =
 
-type program = {
-  types : (identifier, type_specifier) bindings ;
-  body : expression ;
-}
+  let represent_type_binding { name ; value } =
+    sprintf "type %s = %s" name ([%show: type_specifier] value) in
 
-let show_type_binding { name ; value } =
-  sprintf "type %s = %s" name ([%show: type_specifier] value)
+  let types = List.map types ~f:represent_type_binding in
+  let body = represent_expression body in
 
-let show_program { types ; body } =
-  let types = List.map types ~f:show_type_binding in
-  let body = show_expression body in
   sprintf "%s\n\n%s" (String.concat ~sep:"\n" types) body
-
-let pp_program f p =
-  Format.fprintf f "%s" (show_program p)

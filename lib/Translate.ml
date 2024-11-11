@@ -4,7 +4,7 @@
 
 open Core
 open Types
-open Prelude
+open Symbol
 
 module S = Apex         (* source *)
 module T = ThreeAddress (* target *)

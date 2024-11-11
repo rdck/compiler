@@ -2,13 +2,10 @@
 (* LIFTED LAMBDA CALCULUS *)
 (******************************************************************************)
 
-open Prelude
+open Symbol
 open Types
 
 type binop = Syntax.binop
-[@@deriving equal, show]
-
-type identifier = Syntax.identifier
 [@@deriving equal, show]
 
 type symbol = int

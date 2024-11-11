@@ -3,10 +3,7 @@
 (******************************************************************************)
 
 open Types
-open Prelude
-
-type identifier = string
-[@@deriving equal, show]
+open Symbol
 
 type binop = Syntax.binop
 [@@deriving equal, show]

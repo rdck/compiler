@@ -1,5 +1,5 @@
 open Core
-open Prelude
+open Symbol
 open Lexeme
 open Types
 open Syntax

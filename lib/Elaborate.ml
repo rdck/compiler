@@ -3,19 +3,17 @@
 (******************************************************************************)
 
 open Core
-open Prelude
+open Symbol
 open Types
 open Result.Let_syntax
 
 module S = Syntax       (* source *)
 module T = Elaboration  (* target *)
 
-type 'a environment = (S.identifier, 'a) bindings
-
 let fail = Result.fail
 
 (* factor out *)
-let lookup (gamma : ty environment) (id : S.identifier) =
+let lookup gamma id =
   let predicate { name ; value = _ } = String.(=) id name in
   let projection binding = binding.value in
   Option.map (List.find gamma ~f:predicate) ~f:projection

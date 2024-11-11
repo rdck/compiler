@@ -2,7 +2,7 @@
 (* PRIMTIVE C *)
 (******************************************************************************)
 
-open Prelude
+open Symbol
 
 type identifier = string
 [@@deriving equal]

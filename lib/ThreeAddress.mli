@@ -3,13 +3,10 @@
 (******************************************************************************)
 
 open Core
-open Prelude
+open Symbol
 open Types
 
 type symbol = Apex.symbol
-[@@deriving equal, show]
-
-type identifier = Syntax.identifier
 [@@deriving equal, show]
 
 type binop = Syntax.binop

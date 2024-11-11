@@ -3,7 +3,7 @@
 (******************************************************************************)
 
 open Core
-open Prelude
+open Symbol
 open Types
 
 module S = Elaboration  (* source *)
@@ -34,8 +34,8 @@ let free_vars expr =
 
 (* factor out *)
 let lookup (gamma : (identifier, ty) bindings) (id : identifier) =
-  let predicate binding = String.equal id binding.Prelude.name in
-  Option.map (List.find gamma ~f:predicate) ~f:project_value
+  let predicate binding = String.equal id binding.Symbol.name in
+  Option.map (List.find gamma ~f:predicate) ~f:binding_value
 
 let lookup_exn gamma id =
   Option.value_exn (lookup gamma id)
