@@ -8,8 +8,10 @@ open Types
 module S = Elaboration (* source *)
 module T = Apex (* target *)
 
-let free_vars expr =
+(* find the free variables in an expression *)
+let free expr =
   let filter id name = not (String.equal id name) in
+  (* compute the free variables without removing duplicates *)
   let rec multi S.{ expr; note = _ } =
     match expr with
     | S.Lit _ -> []
@@ -19,25 +21,20 @@ let free_vars expr =
     | S.Abs (id, body) -> List.filter (multi body) ~f:(filter id)
     | S.Con (_, p) -> multi p
     | S.Mat (control, cases) ->
-      let cases_vars =
-        List.map cases ~f:(fun (pattern, body) ->
-          List.filter (multi body) ~f:(filter pattern.parameter))
+      (* find the free variables in a case *)
+      let free_in_case (pattern, body) =
+        List.filter (multi body) ~f:(filter pattern.S.parameter)
       in
-      let control_vars = multi control in
-      List.concat (control_vars :: cases_vars)
+      (* map the above over all cases *)
+      let free_in_cases = List.map cases ~f:free_in_case in
+      List.concat (multi control :: free_in_cases)
     | S.Rec _ -> failwith "TODO"
   in
   List.stable_dedup (multi expr) ~compare:String.compare
 
 
-(* factor out *)
-let lookup (gamma : (identifier, ty) bindings) (id : identifier) =
-  let predicate binding = String.equal id binding.Symbol.name in
-  Option.map (List.find gamma ~f:predicate) ~f:binding_value
-
-
-let lookup_exn gamma id = Option.value_exn (lookup gamma id)
-
+(* The result of lifting a term is a set of lifted definitions together with the modified
+   term. *)
 type lift =
   { terms : (symbol, T.definition) bindings
   ; body : T.term
@@ -52,8 +49,10 @@ let lift_program S.{ types; body } =
     index
   in
   let rec lift gamma (S.{ expr; note } as node) =
-    let translate expr = T.{ expr; note } in
-    let output terms body = { terms; body = translate body } in
+    (* annotate an expression with the type of the input term *)
+    let annotate expr = T.{ expr; note } in
+    (* curried constructor for the result of a lift *)
+    let output terms body = { terms; body = annotate body } in
     let var id =
       match List.hd gamma with
       | Some { name; value = _ } -> if String.equal name id then T.Arg id else T.Var id
@@ -71,7 +70,7 @@ let lift_program S.{ types; body } =
       let { terms = rhs_terms; body = rhs_body } = lift gamma rhs in
       output (lhs_terms @ rhs_terms) (App (lhs_body, rhs_body))
     | S.Abs (id, body) ->
-      let fvs = free_vars node in
+      let fvs = free node in
       let symbol = gensym "main" in
       let { terms = body_terms; body = body_body } =
         let argument = binding id (ty_domain_exn note) in
@@ -90,7 +89,7 @@ let lift_program S.{ types; body } =
           (let args =
              List.map fvs ~f:(fun v -> T.{ expr = var v; note = lookup_exn gamma v })
            in
-           translate (Cls (symbol, args)))
+           annotate (Cls (symbol, args)))
       }
     | S.Con (c, p) ->
       let { terms; body } = lift gamma p in
@@ -104,7 +103,7 @@ let lift_program S.{ types; body } =
           T.annotate x t
         | None -> T.annotate (Var id) (lookup_exn gamma id)
       in
-      let fvs = free_vars node in
+      let fvs = free node in
       let { terms = control_terms; body = control_body } = lift gamma control in
       (* lift a case *)
       let f (pattern, body) =

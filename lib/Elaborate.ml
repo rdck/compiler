@@ -11,13 +11,6 @@ module T = Elaboration (* target *)
 
 let fail = Result.fail
 
-(* factor out *)
-let lookup gamma id =
-  let predicate { name; value = _ } = String.( = ) id name in
-  let projection binding = binding.value in
-  Option.map (List.find gamma ~f:predicate) ~f:projection
-
-
 type constructor_spec =
   { family : string
   ; index : int
