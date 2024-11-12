@@ -49,7 +49,7 @@ let count_term environment arg instructions =
   let body =
     List.concat_map body ~f:(function
       | Store (_, _, Closure (_, args)) as instruction ->
-        let args = List.filter args ~f:(fun r -> is_arrow_type (lookup_register r)) in
+        let args = List.filter args ~f:(fun r -> is_heap_type (lookup_register r)) in
         instruction :: List.map args ~f:inc
       | instruction -> [ instruction ])
   in
@@ -60,7 +60,7 @@ let count_term environment arg instructions =
       ~f:
         begin
           function
-          | Store (r, t, Read _) as instruction when is_arrow_type t ->
+          | Store (r, t, Read _) as instruction when is_heap_type t ->
             [ instruction; inc r ]
           | instruction -> [ instruction ]
         end
@@ -70,7 +70,7 @@ let count_term environment arg instructions =
     (* find heap stores that don't escape via return *)
     let stores =
       List.filter_map body ~f:(function
-        | Store (r, t, _) when is_arrow_type t ->
+        | Store (r, t, _) when is_heap_type t ->
           if [%equal: register] r return_register then None else Some r
         | _ -> None)
     in
@@ -81,7 +81,7 @@ let count_term environment arg instructions =
   (* issue pair for function argument *)
   let body =
     match arg with
-    | Some { name = arg_id; value = t } when is_arrow_type t ->
+    | Some { name = arg_id; value = t } when is_heap_type t ->
       let arg_var = Arg arg_id in
       (inc arg_var :: body) @ [ dec arg_var ]
     | _ -> body

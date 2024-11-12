@@ -26,3 +26,4 @@ val ty_symbol : ty -> identifier option
 val ty_symbol_exn : ty -> identifier
 val is_symbol_type : ty -> bool
 val is_arrow_type : ty -> bool
+val is_heap_type : ty -> bool

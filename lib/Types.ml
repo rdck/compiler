@@ -65,3 +65,12 @@ let ty_symbol = function
 
 
 let ty_symbol_exn t = Option.value_exn ~message:"expected type symbol" (ty_symbol t)
+
+let is_heap_type_symbol = function
+  | s when String.equal s z64_symbol -> false
+  | _ -> true
+
+
+let is_heap_type = function
+  | TypeSymbol s -> is_heap_type_symbol s
+  | Arrow _ -> true

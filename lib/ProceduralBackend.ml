@@ -11,6 +11,7 @@ let name_type index = sprintf "T%d" index
 let name_tag_type index = sprintf "T%dTag" index
 let name_eval index = sprintf "apply_t%d" index
 let name_drop index = sprintf "drop_t%d" index
+let name_user_drop s = sprintf "drop_%s" s
 let name_environment_type index = sprintf "F%d" index
 let name_env_union index = sprintf "E%d" index
 let name_function index = sprintf "f%d" index
@@ -86,6 +87,11 @@ let compile_program source =
     match t with
     | TypeSymbol id -> translate_type_symbol id
     | Arrow _ -> T.Pointer (T.TypeSymbol (name_type (lookup_type_index t)))
+  in
+  (* determine drop name *)
+  let drop_for_type = function
+    | Types.TypeSymbol s -> name_user_drop s
+    | Types.Arrow _ as t -> name_drop (lookup_type_index t)
   in
   (* map from function index to environment type *)
   let environment_map =
@@ -313,11 +319,13 @@ let compile_program source =
       | S.Count (op, r) ->
         let count = T.(Arrow (register_var r, name_counter)) in
         T.
-          [ (match op with
-             | Inc -> Assign (count, Bin (Add, Assignable count, Lit 1))
-             | Dec ->
-               let rt = lookup_type_index (register_type r) in
-               Effect (Call (name_drop rt, [ Assignable (register_var r) ])))
+          [ begin
+              match op with
+              | Inc -> Assign (count, Bin (Add, Assignable count, Lit 1))
+              | Dec ->
+                Effect
+                  (Call (drop_for_type (register_type r), [ Assignable (register_var r) ]))
+            end
           ]
     in
     List.map instructions ~f:compile_instruction
@@ -396,13 +404,12 @@ let compile_program source =
         let function_definition = Map.find_exn term_map fidx in
         let environment = function_definition.S.env in
         let environment =
-          List.filter environment ~f:(fun { name = _; value = t } -> is_arrow_type t)
+          List.filter environment ~f:(fun { name = _; value = t } -> is_heap_type t)
         in
         let drop_statements =
           List.map environment ~f:(fun { name; value = t } ->
-            let type_index = lookup_type_index t in
             let argument = T.(Assignable (Arrow (Var name_environment, name))) in
-            T.(Effect (Call (name_drop type_index, [ argument ]))))
+            T.(Effect (Call (drop_for_type t, [ argument ]))))
         in
         T.
           { tag = Assignable (Var (name_lambda type_index fidx))
