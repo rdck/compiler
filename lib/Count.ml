@@ -33,7 +33,7 @@ let count_term environment arg instructions =
     (* local registers *)
     let block =
       List.filter_map body ~f:(function
-        | Store (r, t, _) when is_arrow_type t -> Some (r, t)
+        | Store (r, t, _) -> Some (r, t)
         | _ -> None)
     in
     register_map_of (env @ block)

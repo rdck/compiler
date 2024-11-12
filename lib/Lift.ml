@@ -130,7 +130,7 @@ let lift_program S.{ types; body } =
       output (control_terms @ List.concat cases_terms) body
     | S.Let (id, e, b) ->
       let { terms = et; body = eb } = lift gamma e in
-      let { terms = bt; body = bb } = lift gamma b in
+      let { terms = bt; body = bb } = lift (binding id e.note :: gamma) b in
       output (et @ bt) (T.Let (id, eb, bb))
   in
   let { terms; body } = lift [] body in
