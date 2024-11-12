@@ -8,6 +8,7 @@ type ir =
   | Syntax
   | Elaboration
   | Apex
+  | Toponym
   | Triple
   | Tally
   | Procedural

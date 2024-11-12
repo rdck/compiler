@@ -36,7 +36,8 @@ let () =
     [ ( "parse_type"
       , [ test_case_for_type "z64" @@ return z64
         ; test_case_for_type "z64 -> z64 -> z64" @@ return (Arrow (z64, Arrow (z64, z64)))
-        ; test_case_for_type "(z64 -> z64) -> z64" @@ return (Arrow (Arrow (z64, z64), z64))
+        ; test_case_for_type "(z64 -> z64) -> z64"
+          @@ return (Arrow (Arrow (z64, z64), z64))
         ] )
     ; ( "parse"
       , [ test_case_for_expr "2 + 3" @@ return Syntax.(Bin (Add, Lit 2, Lit 3))
@@ -49,7 +50,8 @@ let () =
         ; test_case_for_expr "λ x : z64 . x"
           @@ return Syntax.(Abs ({ name = "x"; value = z64 }, Var "x"))
         ; test_case_for_expr "λ x : z64 . x + x"
-          @@ return Syntax.(Abs ({ name = "x"; value = z64 }, Bin (Add, Var "x", Var "x")))
+          @@ return
+               Syntax.(Abs ({ name = "x"; value = z64 }, Bin (Add, Var "x", Var "x")))
         ; test_case_for_expr "f x" @@ return Syntax.(App (Var "f", Var "x"))
         ; test_case_for_expr "f x y"
           @@ return Syntax.(App (App (Var "f", Var "x"), Var "y"))

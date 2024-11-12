@@ -34,8 +34,7 @@ let compile_program S.{ types; terms; body } =
         let { code = rhc; reg = rhr } = compile rhs in
         let sym = gensym () in
         { code = (lhc @ rhc @ T.[ Store (sym, z64, Bin (op, lhr, rhr)) ]); reg = sym }
-      | S.Var id -> { code = []; reg = T.Env id }
-      | S.Arg _ -> { code = []; reg = T.Arg }
+      | S.Var id -> { code = []; reg = T.Env id } (* TODO: fix variable namespacing *)
       | S.Cls (idx, args) ->
         let compiled_args = List.map args ~f:compile in
         let codes = List.map compiled_args ~f:project_code in

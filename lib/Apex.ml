@@ -24,7 +24,6 @@ module Term = struct
        | Mul -> Binary (3, Left, lhs, rhs)
        | Exp -> Binary (4, Right, lhs, rhs))
     | Var _ -> Nullary
-    | Arg _ -> Nullary
     | Cls (_, args) -> Nary args
     | App (f, x) -> Binary (5, Left, f, x)
     | Con (_, p) -> Unary (5, p)
@@ -39,7 +38,6 @@ module Term = struct
     | Bin (Mul, _, _) -> " * "
     | Bin (Exp, _, _) -> " ^ "
     | Var id -> id
-    | Arg id -> String.uppercase id
     | App _ -> " "
     | Cls (sym, _) -> sprintf "f%s" (show_symbol sym)
     | Con (c, _) -> sprintf "%s " c

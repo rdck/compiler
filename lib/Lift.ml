@@ -28,7 +28,6 @@ let free expr =
       (* map the above over all cases *)
       let free_in_cases = List.map cases ~f:free_in_case in
       List.concat (multi control :: free_in_cases)
-    | S.Rec _ -> failwith "TODO"
   in
   List.stable_dedup (multi expr) ~compare:String.compare
 
@@ -53,18 +52,14 @@ let lift_program S.{ types; body } =
     let annotate expr = T.{ expr; note } in
     (* curried constructor for the result of a lift *)
     let output terms body = { terms; body = annotate body } in
-    let var id =
-      match List.hd gamma with
-      | Some { name; value = _ } -> if String.equal name id then T.Arg id else T.Var id
-      | None -> Var id
-    in
+    let var id = T.annotate (Var id) (lookup_exn gamma id) in
     match expr with
     | S.Lit i -> output [] (Lit i)
     | S.Bin (op, lhs, rhs) ->
       let { terms = lhs_terms; body = lhs_body } = lift gamma lhs in
       let { terms = rhs_terms; body = rhs_body } = lift gamma rhs in
       output (lhs_terms @ rhs_terms) (Bin (op, lhs_body, rhs_body))
-    | S.Var id -> output [] (var id)
+    | S.Var id -> output [] (Var id)
     | S.App (lhs, rhs) ->
       let { terms = lhs_terms; body = lhs_body } = lift gamma lhs in
       let { terms = rhs_terms; body = rhs_body } = lift gamma rhs in
@@ -85,24 +80,12 @@ let lift_program S.{ types; body } =
                }
            in
            binding symbol definition :: body_terms)
-      ; body =
-          (let args =
-             List.map fvs ~f:(fun v -> T.{ expr = var v; note = lookup_exn gamma v })
-           in
-           annotate (Cls (symbol, args)))
+      ; body = annotate (Cls (symbol, List.map fvs ~f:var))
       }
     | S.Con (c, p) ->
       let { terms; body } = lift gamma p in
       output terms (Con (c, body))
     | S.Mat (control, cases) ->
-      (* TODO: shared with abs *)
-      let var id =
-        match List.hd gamma with
-        | Some { name; value = t } ->
-          let x = if String.equal name id then T.Arg id else T.Var id in
-          T.annotate x t
-        | None -> T.annotate (Var id) (lookup_exn gamma id)
-      in
       let fvs = free node in
       let { terms = control_terms; body = control_body } = lift gamma control in
       (* lift a case *)
@@ -122,9 +105,9 @@ let lift_program S.{ types; body } =
         in
         let closure_type = Arrow (pattern.parameter_type, body.note) in
         let closure =
-          T.annotate (T.Cls (symbol, List.map fvs ~f:(fun v -> var v))) closure_type
+          T.annotate (T.Cls (symbol, List.map fvs ~f:var)) closure_type
         in
-        let argument = T.annotate (T.Arg pattern.S.parameter) pattern.S.parameter_type in
+        let argument = T.annotate (T.Var pattern.S.parameter) pattern.S.parameter_type in
         { terms = binding symbol definition :: body_terms
         ; body = T.annotate (T.App (closure, argument)) body.S.note
         }
@@ -141,9 +124,8 @@ let lift_program S.{ types; body } =
              | _ -> failwith "ill formed match compilation")
           | _ -> failwith "ill formed match compilation")
       in
-      let body = T.Mat (control_body, List.map fvs ~f:(fun v -> var v), symbols) in
+      let body = T.Mat (control_body, List.map fvs ~f:var, symbols) in
       output (control_terms @ List.concat cases_terms) body
-    | S.Rec _ -> failwith "TODO"
   in
   let { terms; body } = lift [] body in
   T.{ types; terms; body }

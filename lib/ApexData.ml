@@ -8,8 +8,7 @@ type pattern = Elaboration.pattern [@@deriving equal, show]
 type 'a node =
   | Lit of int
   | Bin of binop * 'a expression * 'a expression
-  | Var of identifier (* from environment *)
-  | Arg of identifier (* function parameter *)
+  | Var of identifier
   | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
   | Con of identifier * 'a expression
