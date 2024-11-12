@@ -12,7 +12,8 @@ let represent_binop = Apex.represent_binop
 let represent_register = function
   | Reg id -> sprintf "r%d" id
   | Arg _ -> "arg"
-  | Env id -> sprintf "%s" id
+  | Env id -> id
+  | Loc id -> id
 
 
 let represent_expression = function
@@ -35,6 +36,7 @@ let represent_expression = function
       String.concat ~sep:" " (List.map environment ~f:represent_register)
     in
     sprintf "match %s under [%s] with %s" (represent_register control) environment cases
+  | Read r -> represent_register r
 
 
 let represent_count_operation = function

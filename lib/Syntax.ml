@@ -36,6 +36,7 @@ module Expression = struct
     | Con (_, arg) -> Unary (5, arg)
     (* TODO: figure out how to show patterns *)
     | Mat (e, es) -> Nary (e :: List.map es ~f:snd)
+    | Let _ -> Nullary (* TODO *)
 
 
   let node_text = function
@@ -49,6 +50,7 @@ module Expression = struct
     | Abs ({ name; value = domain }, _) -> sprintf "λ %s : %s . " name (show_ty domain)
     | Con (id, _) -> sprintf "%s " id
     | Mat _ -> "match" (* incomplete *)
+    | Let _ -> "let" (* incomplet *)
 end
 
 module Printer = PrettyPrinter.Make (Expression)

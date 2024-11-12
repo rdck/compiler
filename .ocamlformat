@@ -1,3 +1,4 @@
 profile = janestreet
 let-binding-spacing = sparse
 wrap-comments = true
+exp-grouping = preserve

@@ -30,11 +30,12 @@ let compile_program S.{ types; terms; body } =
         let { code = rhc; reg = rhr } = compile rhs in
         let sym = gensym () in
         { code = (lhc @ rhc @ T.[ Store (sym, z64, Bin (op, lhr, rhr)) ]); reg = sym }
-      | S.Var (namespace, id) ->
-        (match namespace with
-         | Arg -> { code = []; reg = T.Arg id }
-         | Env -> { code = []; reg = T.Env id }
-         | Loc -> failwith "TODO")
+      | S.Var (namespace, id) -> begin
+        match namespace with
+        | Arg -> { code = []; reg = T.Arg id }
+        | Env -> { code = []; reg = T.Env id }
+        | Loc -> { code = []; reg = T.Loc id }
+      end
       | S.Cls (idx, args) ->
         let compiled_args = List.map args ~f:compile in
         let codes = List.map compiled_args ~f:project_code in
@@ -64,6 +65,11 @@ let compile_program S.{ types; terms; body } =
         in
         let mat = T.(Store (sym, note, match_expression)) in
         { code = control_code @ [ mat ]; reg = sym }
+      | S.Let (id, e, b) ->
+        let { code = ec; reg = er } = compile e in
+        let { code = bc; reg = br } = compile b in
+        let store = T.(Store (Loc id, e.S.note, Read er)) in
+        { code = ec @ [ store ] @ bc; reg = br }
     in
     compile expr
   in

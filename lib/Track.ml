@@ -3,25 +3,34 @@ open Symbol
 module S = Apex (* source *)
 module T = Toponym (* target *)
 
-let rec track_expression argument expr =
+(* the context keeps a list of local variables *)
+let rec track_expression gamma argument expr =
   let track = track_expression in
   let annotate e = T.annotate e expr.S.note in
   let inner =
     match expr.expr with
     | S.Lit i -> T.Lit i
-    | S.Bin (op, lhs, rhs) -> T.Bin (op, track argument lhs, track argument rhs)
+    | S.Bin (op, lhs, rhs) ->
+      T.Bin (op, track gamma argument lhs, track gamma argument rhs)
     | S.Var id ->
-      let namespace = if String.equal id argument then T.Arg else T.Env in
+      let namespace =
+        match List.find gamma ~f:(String.equal id) with
+        | Some _ -> T.Loc
+        | None -> if String.equal id argument then T.Arg else T.Env
+      in
       T.Var (namespace, id)
     | S.Cls (symbol, parameters) ->
-      let parameters = List.map parameters ~f:(track_expression argument) in
+      let parameters = List.map parameters ~f:(track gamma argument) in
       T.Cls (symbol, parameters)
-    | S.App (f, x) -> T.App (track argument f, track argument x)
-    | S.Con (c, p) -> T.Con (c, track argument p)
+    | S.App (f, x) -> T.App (track gamma argument f, track gamma argument x)
+    | S.Con (c, p) -> T.Con (c, track gamma argument p)
     | S.Mat (control, environment, cases) ->
-      let control = track argument control in
-      let environment = List.map environment ~f:(track argument) in
+      let control = track gamma argument control in
+      let environment = List.map environment ~f:(track gamma argument) in
       T.Mat (control, environment, cases)
+    | S.Let (id, e, b) ->
+      let extended = id :: gamma in
+      T.Let (id, track gamma argument e, track extended argument b)
   in
   annotate inner
 
@@ -30,12 +39,12 @@ let track_definition binding =
   let d = binding.value in
   Symbol.binding
     binding.name
-    T.{ env = d.S.env; arg = d.S.arg; body = track_expression d.S.arg.name d.S.body }
+    T.{ env = d.S.env; arg = d.S.arg; body = track_expression [] d.S.arg.name d.S.body }
 
 
 let track_program program =
   T.
     { types = program.S.types
     ; terms = List.map program.S.terms ~f:track_definition
-    ; body = track_expression "" program.S.body
+    ; body = track_expression [] "" program.S.body
     }

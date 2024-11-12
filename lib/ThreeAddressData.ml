@@ -18,6 +18,7 @@ type expression =
   | Call of register * register
   | Con of identifier * register
   | Mat of register * ty * register list * symbol list
+  | Read of register
 [@@deriving equal, show]
 
 type count_operation =

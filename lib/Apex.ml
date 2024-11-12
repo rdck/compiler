@@ -28,6 +28,7 @@ module Term = struct
     | App (f, x) -> Binary (5, Left, f, x)
     | Con (_, p) -> Unary (5, p)
     | Mat _ -> Nullary (* TODO *)
+    | Let (_, e, b) -> Binary (0, Right, e, b)
 
 
   let node_text { expr; note = _ } =
@@ -42,6 +43,7 @@ module Term = struct
     | Cls (sym, _) -> sprintf "f%s" (represent_symbol sym)
     | Con (c, _) -> sprintf "%s " c
     | Mat _ -> "match" (* incomplete *)
+    | Let _ -> "let" (* incomplete *)
 end
 
 module Printer = PrettyPrinter.Make (Term)

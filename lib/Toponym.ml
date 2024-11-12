@@ -5,6 +5,12 @@ include ToponymData
 
 let annotate e a = { expr = e; note = a }
 
+let represent_namespace = function
+  | Arg -> "arg"
+  | Env -> "env"
+  | Loc -> "local"
+
+
 module Term = struct
   open PrettyPrinter
 
@@ -24,6 +30,7 @@ module Term = struct
     | App (f, x) -> Binary (5, Left, f, x)
     | Con (_, p) -> Unary (5, p)
     | Mat _ -> Nullary (* TODO *)
+    | Let (_, e, b) -> Binary (0, Right, e, b)
 
 
   let node_text { expr; note = _ } =
@@ -33,11 +40,12 @@ module Term = struct
     | Bin (Sub, _, _) -> " - "
     | Bin (Mul, _, _) -> " * "
     | Bin (Exp, _, _) -> " ^ "
-    | Var (_, id) -> id
+    | Var (namespace, id) -> sprintf "%s.%s" (represent_namespace namespace) id
     | App _ -> " "
     | Cls (sym, _) -> sprintf "f%s" (represent_symbol sym)
     | Con (c, _) -> sprintf "%s " c
     | Mat _ -> "match" (* incomplete *)
+    | Let (id, _, _) -> sprintf " as %s in " id
 end
 
 module Printer = PrettyPrinter.Make (Term)

@@ -28,6 +28,10 @@ let free expr =
       (* map the above over all cases *)
       let free_in_cases = List.map cases ~f:free_in_case in
       List.concat (multi control :: free_in_cases)
+    | S.Let (id, e, b) ->
+      let free_in_definition = multi e in
+      let free_in_body = List.filter (multi b) ~f:(filter id) in
+      free_in_definition @ free_in_body
   in
   List.stable_dedup (multi expr) ~compare:String.compare
 
@@ -124,6 +128,10 @@ let lift_program S.{ types; body } =
       in
       let body = T.Mat (control_body, List.map fvs ~f:var, symbols) in
       output (control_terms @ List.concat cases_terms) body
+    | S.Let (id, e, b) ->
+      let { terms = et; body = eb } = lift gamma e in
+      let { terms = bt; body = bb } = lift gamma b in
+      output (et @ bt) (T.Let (id, eb, bb))
   in
   let { terms; body } = lift [] body in
   T.{ types; terms; body }

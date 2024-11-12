@@ -17,6 +17,7 @@ let name_function index = sprintf "f%d" index
 let name_lambda t f = sprintf "%s_%s" (name_type t) (name_environment_type f)
 let name_user_tag id = sprintf "%s_tag" id
 let name_user_union id = sprintf "%s_union" id
+let name_local id = id
 let name_user_struct id = id
 let name_argument = "arg"
 let name_environment = "env"
@@ -28,15 +29,18 @@ let name_union = "u"
 let name_free = "free"
 let name_match_closure = "matcher"
 
+let register_id = function
+  | S.Reg index -> name_register index
+  | S.Arg _ -> name_argument
+  | S.Env _ -> failwith "unexpected environment register"
+  | S.Loc id -> name_local id
+
+
 let register_var = function
   | S.Reg index -> T.Var (name_register index)
   | S.Arg _ -> T.Var name_argument
   | S.Env id -> T.Arrow (T.Var name_environment, id)
-
-
-let register_index_exn = function
-  | S.Reg index -> index
-  | _ -> failwith "expected register"
+  | S.Loc id -> T.Var (name_local id)
 
 
 let register_value r = T.Assignable (register_var r)
@@ -207,10 +211,11 @@ let compile_program source =
       | S.Closure _ -> failwith "UNREACHABLE"
       | S.Con _ -> failwith "UNREACHABLE"
       | S.Mat _ -> failwith "UNREACHABLE"
+      | S.Read r -> register_value r
     in
     let compile_instruction = function
       | S.Store (dest, t, Closure (fidx, args)) ->
-        let register_name = name_register (register_index_exn dest) in
+        let register_name = register_id dest in
         let register = register_var dest in
         let tidx = lookup_type_index t in
         let setup =
@@ -235,7 +240,7 @@ let compile_program source =
         in
         setup @ arg_assignment
       | S.Store (dest, t, Con (c, p)) ->
-        let register_name = name_register (register_index_exn dest) in
+        let register_name = register_id dest in
         let register = register_var dest in
         T.
           [ Declare (register_name, atomic_type t)
@@ -245,7 +250,7 @@ let compile_program source =
           ; Assign (Dot (Arrow (register, name_union), c), Assignable (register_var p))
           ]
       | S.Store (dest, t, Mat (control, control_type, environment, cases)) ->
-        let register_name = name_register (register_index_exn dest) in
+        let register_name = register_id dest in
         let register = register_var dest in
         let type_symbol = ty_symbol_exn control_type in
         let spec = lookup_type_exn type_symbol in
@@ -299,7 +304,7 @@ let compile_program source =
               , List.map zipped ~f:gen_case )
           ]
       | S.Store (dest, t, v) ->
-        let register_name = name_register (register_index_exn dest) in
+        let register_name = register_id dest in
         let register = register_var dest in
         let register_decl = T.Declare (register_name, atomic_type t) in
         let assignment = T.Assign (register, compile_expression v) in
@@ -332,6 +337,7 @@ let compile_program source =
           | S.Reg _ as r -> List.find_map_exn fdef.S.body ~f:(store_type r)
           | S.Arg _ -> domain
           | S.Env id -> List.find_map_exn fdef.S.env ~f:(filter_arg_type id)
+          | S.Loc _ as r -> List.find_map_exn fdef.S.body ~f:(store_type r)
         in
         let env_decl =
           T.Declare (name_environment, Pointer (TypeSymbol (name_environment_type fidx)))
@@ -430,6 +436,7 @@ let compile_program source =
     | S.Reg _ as r -> List.find_map_exn source.S.body ~f:(store_type r)
     | S.Arg _ -> failwith "unexpected arg in main"
     | S.Env _ -> failwith "unexpected env in main"
+    | S.Loc _ as r -> List.find_map_exn source.S.body ~f:(store_type r)
   in
   let main = List.concat (compile_instructions source.S.body get_register_type) in
   T.

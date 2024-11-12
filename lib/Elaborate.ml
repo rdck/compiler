@@ -123,6 +123,11 @@ let elaborate_program program =
           (List.all_equal annotations ~equal:[%equal: ty])
       in
       output (Mat (control, sorted)) body_type
+    | Let (id, e, b) ->
+      let%bind ({ expr = _; note = et } as e) = synth gamma e in
+      let gamma = binding id et :: gamma in
+      let%bind ({ expr = _; note = bt } as b) = synth gamma b in
+      output (Let (id, e, b)) bt
   in
   let%bind body = synth [] program.S.body in
   return T.{ types = program.S.types; body }

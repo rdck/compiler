@@ -76,6 +76,13 @@ let rec pratt p tokens =
       return_parse (Mat (control, cases)) rest
     | Identifier id :: rest -> return_parse (Var id) rest
     | Literal l :: rest -> return_parse (Lit l) rest
+    | Let :: rest ->
+      let%bind { syntax = id; rest } = parse_identifier rest in
+      let%bind rest = consume Equal rest in
+      let%bind { syntax = d; rest } = pratt 0 rest in
+      let%bind rest = consume In rest in
+      let%bind { syntax = body; rest } = pratt 0 rest in
+      return_parse (Let (id, d, body)) rest
     | _ -> fail "expected atom"
   in
   match tokens with

@@ -30,6 +30,7 @@ module Term = struct
     | Con (_, arg) -> Unary (5, arg)
     (* TODO: figure out how to show patterns *)
     | Mat (e, es) -> Nary (e :: List.map es ~f:snd)
+    | Let (_, e, b) -> Binary (0, Right, e, b)
 
 
   let node_text { expr; note = _ } =
@@ -44,6 +45,7 @@ module Term = struct
     | Abs (id, _) -> sprintf "λ %s . " id
     | Con (id, _) -> sprintf "%s " id
     | Mat _ -> "match" (* incomplete *)
+    | Let _ -> "let" (* incomplete *)
 end
 
 module Printer = PrettyPrinter.Make (Term)
