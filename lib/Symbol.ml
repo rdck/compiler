@@ -12,3 +12,4 @@ let lookup gamma k =
 
 
 let lookup_exn gamma k = Option.value_exn (lookup gamma k)
+let represent_symbol s = sprintf "%d" s

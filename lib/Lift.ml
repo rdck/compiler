@@ -104,9 +104,7 @@ let lift_program S.{ types; body } =
             }
         in
         let closure_type = Arrow (pattern.parameter_type, body.note) in
-        let closure =
-          T.annotate (T.Cls (symbol, List.map fvs ~f:var)) closure_type
-        in
+        let closure = T.annotate (T.Cls (symbol, List.map fvs ~f:var)) closure_type in
         let argument = T.annotate (T.Var pattern.S.parameter) pattern.S.parameter_type in
         { terms = binding symbol definition :: body_terms
         ; body = T.annotate (T.App (closure, argument)) body.S.note

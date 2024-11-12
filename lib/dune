@@ -25,6 +25,9 @@
    SyntaxData
    ThreeAddress
    ThreeAddressData
+   Toponym
+   ToponymData
+   Track
    Translate
    Types
    TypeData

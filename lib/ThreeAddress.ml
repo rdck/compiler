@@ -11,7 +11,7 @@ let represent_binop = Apex.represent_binop
 
 let represent_register = function
   | Reg id -> sprintf "r%d" id
-  | Arg -> "arg"
+  | Arg _ -> "arg"
   | Env id -> sprintf "%s" id
 
 

@@ -6,7 +6,7 @@ type binop = Syntax.binop [@@deriving equal, show]
 
 type register =
   | Reg of int
-  | Arg
+  | Arg of identifier
   | Env of identifier
 [@@deriving equal, show, compare, sexp]
 

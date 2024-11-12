@@ -1,13 +1,9 @@
-(******************************************************************************)
-(* LIFTED LAMBDA CALCULUS *)
-(******************************************************************************)
-
 open Core
 open Symbol
 open Types
-include ApexData
+include ToponymData
 
-let annotate expr note = { expr; note }
+let annotate e a = { expr = e; note = a }
 
 module Term = struct
   open PrettyPrinter
@@ -37,7 +33,7 @@ module Term = struct
     | Bin (Sub, _, _) -> " - "
     | Bin (Mul, _, _) -> " * "
     | Bin (Exp, _, _) -> " ^ "
-    | Var id -> id
+    | Var (_, id) -> id
     | App _ -> " "
     | Cls (sym, _) -> sprintf "f%s" (represent_symbol sym)
     | Con (c, _) -> sprintf "%s " c

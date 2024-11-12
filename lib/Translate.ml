@@ -1,11 +1,7 @@
-(******************************************************************************)
-(* Apex -> ThreeAddress *)
-(******************************************************************************)
-
 open Core
 open Types
 open Symbol
-module S = Apex (* source *)
+module S = Toponym (* source *)
 module T = ThreeAddress (* target *)
 
 type compilation =
@@ -34,7 +30,11 @@ let compile_program S.{ types; terms; body } =
         let { code = rhc; reg = rhr } = compile rhs in
         let sym = gensym () in
         { code = (lhc @ rhc @ T.[ Store (sym, z64, Bin (op, lhr, rhr)) ]); reg = sym }
-      | S.Var id -> { code = []; reg = T.Env id } (* TODO: fix variable namespacing *)
+      | S.Var (namespace, id) ->
+        (match namespace with
+         | Arg -> { code = []; reg = T.Arg id }
+         | Env -> { code = []; reg = T.Env id }
+         | Loc -> failwith "TODO")
       | S.Cls (idx, args) ->
         let compiled_args = List.map args ~f:compile in
         let codes = List.map compiled_args ~f:project_code in

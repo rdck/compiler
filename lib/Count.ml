@@ -28,7 +28,7 @@ let count_term environment arg instructions =
     let env =
       match arg with
       | None -> env
-      | Some arg -> (Arg, arg.value) :: env
+      | Some arg -> (Arg arg.Symbol.name, arg.value) :: env
     in
     (* local registers *)
     let block =
@@ -64,7 +64,9 @@ let count_term environment arg instructions =
   (* issue pair for function argument *)
   let body =
     match arg with
-    | Some { name = _; value = t } when is_arrow_type t -> (inc Arg :: body) @ [ dec Arg ]
+    | Some { name = arg_id; value = t } when is_arrow_type t ->
+      let arg_var = Arg arg_id in
+      (inc arg_var :: body) @ [ dec arg_var ]
     | _ -> body
   in
   body @ return

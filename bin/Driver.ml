@@ -27,6 +27,7 @@ let ir_path name =
   | Syntax -> extend "syntax"
   | Elaboration -> extend "elaboration"
   | Apex -> extend "apex"
+  | Toponym -> extend "toponym"
   | Triple -> extend "triple"
   | Tally -> extend "tally"
   | Procedural -> extend "c"
@@ -56,8 +57,11 @@ let compile path output_table =
   (* lambda lifting *)
   let apex = Lift.lift_program elaboration in
   write_ir Apex (Apex.represent_program apex);
+  (* namespace tracking *)
+  let toponym = Track.track_program apex in
+  write_ir Toponym (Toponym.represent_program toponym);
   (* translation *)
-  let triple = Translate.compile_program apex in
+  let triple = Translate.compile_program toponym in
   write_ir Triple (ThreeAddress.represent_program triple);
   (* insert reference counting operations *)
   let tally = Count.count_program triple in
@@ -85,6 +89,7 @@ let command =
      and triple = flag "-triple" no_arg ~doc:"write out three address code"
      and tally =
        flag "-tally" no_arg ~doc:"write out three address code with reference counting"
+     and toponym = flag "-toponym" no_arg ~doc:"write out toponym code"
      and path = anon ("path" %: string) in
      (* code to run with above options available *)
      fun () ->
@@ -94,6 +99,7 @@ let command =
          | Syntax -> false
          | Elaboration -> elaboration
          | Apex -> apex
+         | Toponym -> toponym
          | Triple -> triple
          | Tally -> tally
          | Procedural -> true

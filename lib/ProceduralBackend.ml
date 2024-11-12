@@ -30,7 +30,7 @@ let name_match_closure = "matcher"
 
 let register_var = function
   | S.Reg index -> T.Var (name_register index)
-  | S.Arg -> T.Var name_argument
+  | S.Arg _ -> T.Var name_argument
   | S.Env id -> T.Arrow (T.Var name_environment, id)
 
 
@@ -330,7 +330,7 @@ let compile_program source =
         in
         let get_register_type = function
           | S.Reg _ as r -> List.find_map_exn fdef.S.body ~f:(store_type r)
-          | S.Arg -> domain
+          | S.Arg _ -> domain
           | S.Env id -> List.find_map_exn fdef.S.env ~f:(filter_arg_type id)
         in
         let env_decl =
@@ -428,7 +428,7 @@ let compile_program source =
   (* duplicated logic with above *)
   let get_register_type = function
     | S.Reg _ as r -> List.find_map_exn source.S.body ~f:(store_type r)
-    | S.Arg -> failwith "unexpected arg in main"
+    | S.Arg _ -> failwith "unexpected arg in main"
     | S.Env _ -> failwith "unexpected env in main"
   in
   let main = List.concat (compile_instructions source.S.body get_register_type) in
