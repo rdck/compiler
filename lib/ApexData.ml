@@ -13,6 +13,7 @@ type 'a node =
   | App of 'a expression * 'a expression
   | Con of identifier * 'a expression
   | Mat of 'a expression * 'a expression list * symbol list
+  | Let of identifier * 'a expression * 'a expression
 
 and 'a expression =
   { expr : 'a node

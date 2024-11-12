@@ -24,6 +24,7 @@ type expression =
   | Abs of (identifier, ty) binding * expression
   | Con of identifier * expression
   | Mat of expression * (pattern * expression) list
+  | Let of identifier * expression * expression
 [@@deriving equal, show]
 
 type program =

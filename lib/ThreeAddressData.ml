@@ -8,6 +8,7 @@ type register =
   | Reg of int
   | Arg of identifier
   | Env of identifier
+  | Loc of identifier
 [@@deriving equal, show, compare, sexp]
 
 type expression =
