@@ -10,9 +10,14 @@ let register_map_of = Map.of_alist_exn (module Register)
 let count_term environment arg instructions =
   (* separate return statement *)
   let body, return =
-    List.split_while instructions ~f:(function
-      | Return _ -> false
-      | _ -> true)
+    List.split_while
+      instructions
+      ~f:
+        begin
+          function
+          | Return _ -> false
+          | _ -> true
+        end
   in
   (* save return register for later *)
   let return_register =
@@ -47,6 +52,18 @@ let count_term environment arg instructions =
         let args = List.filter args ~f:(fun r -> is_arrow_type (lookup_register r)) in
         instruction :: List.map args ~f:inc
       | instruction -> [ instruction ])
+  in
+  (* issue increment for local stores *)
+  let body =
+    List.concat_map
+      body
+      ~f:
+        begin
+          function
+          | Store (r, t, Read _) as instruction when is_arrow_type t ->
+            [ instruction; inc r ]
+          | instruction -> [ instruction ]
+        end
   in
   (* issue decrement when going out of scope *)
   let body =
