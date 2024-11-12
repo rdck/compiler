@@ -1,0 +1,6 @@
+let f = λ a : z64 .
+  let z = a + 1 in
+  let g = λ b : z64 . b + z in
+  let h = g in
+  h in
+f 0 1
