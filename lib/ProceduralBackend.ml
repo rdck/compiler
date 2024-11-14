@@ -53,7 +53,6 @@ let store_type r = function
 
 
 let compile_program source =
-  (* TODO: duplicated with elaboration *)
   (* type symbol table *)
   let type_table =
     let alist = List.map source.S.types ~f:pair_of_binding in
@@ -80,12 +79,9 @@ let compile_program source =
   (* lookup a type's index via the above map *)
   let lookup_type_index = Map.find_exn type_to_index in
   let atomic_type t =
-    let translate_type_symbol = function
-      | "z64" -> T.TypeSymbol name_z64 (* TODO: standardize builtin type strings *)
-      | id -> T.Pointer (T.TypeSymbol id)
-    in
     match t with
-    | TypeSymbol id -> translate_type_symbol id
+    | TypeSymbol "z64" -> T.TypeSymbol name_z64
+    | TypeSymbol id -> T.Pointer (T.TypeSymbol id)
     | Arrow _ -> T.Pointer (T.TypeSymbol (name_type (lookup_type_index t)))
   in
   (* determine drop name *)
@@ -252,6 +248,7 @@ let compile_program source =
           [ Declare (register_name, atomic_type t)
           ; Assign
               (register, Assignable (Var (sprintf "malloc(sizeof( *%s ))" register_name)))
+          ; Assign (Arrow (register, name_counter), Lit 1)
           ; Assign (Arrow (register, name_tag), Assignable (Var c))
           ; Assign (Dot (Arrow (register, name_union), c), Assignable (register_var p))
           ]
@@ -301,6 +298,7 @@ let compile_program source =
                           ( name_eval closure_type_index
                           , [ Assignable closure_var; parameter ] ) )
                   ]
+                @ [ Effect (Call (name_free, [ Assignable closure_var ])) ]
             }
         in
         T.
@@ -438,6 +436,42 @@ let compile_program source =
     in
     List.map function_types ~f:drop_procedure
   in
+  let user_drop_procedures =
+    let drop_procedure { name = type_name; value = spec } =
+      let body =
+        let struct_var = T.Var type_name in
+        let count_assignable = T.(Arrow (struct_var, name_counter)) in
+        let free = T.(Effect (Call (name_free, [ Assignable struct_var ]))) in
+        let tag = T.(Arrow (struct_var, name_tag)) in
+        let compile_case { name = constructor_name; parameter } =
+          match is_heap_type parameter with
+          | true ->
+            let union = T.(Arrow (struct_var, name_union)) in
+            let argument = T.(Assignable (Dot (union, constructor_name))) in
+            Some
+              T.
+                { tag = Assignable (Var constructor_name)
+                ; body = [ Effect (Call (drop_for_type parameter, [ argument ])) ]
+                }
+          | false -> None
+        in
+        let switch = T.(Switch (Assignable tag, List.filter_map spec ~f:compile_case)) in
+        T.
+          [ Assign (count_assignable, Bin (Sub, Assignable count_assignable, Lit 1))
+          ; If (Bin (LEQ, Assignable count_assignable, Lit 0), Block [ switch; free ])
+          ]
+      in
+      T.
+        { name = name_user_drop type_name
+        ; value =
+            { args = [ binding type_name (T.Pointer (T.TypeSymbol type_name)) ]
+            ; body
+            ; return_type = TypeSymbol name_void
+            }
+        }
+    in
+    List.map source.S.types ~f:drop_procedure
+  in
   (* duplicated logic with above *)
   let get_register_type = function
     | S.Reg _ as r -> List.find_map_exn source.S.body ~f:(store_type r)
@@ -455,6 +489,6 @@ let compile_program source =
         @ environments
         @ closure_unions
         @ closure_structs
-    ; procedures = drop_procedures @ apply_procedures
+    ; procedures = drop_procedures @ user_drop_procedures @ apply_procedures
     ; main
     }
