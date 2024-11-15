@@ -2,13 +2,24 @@ type boolean =
 | True  of z64
 | False of z64
 
+type nested =
+| Nest of boolean
+| Bird of boolean
+| Empty of z64
+
 type unit = | Unit of z64
 
 type int_option =
 | Some of z64
 | None of z64
 
-match Some 666 with
-| None y -> 999
+match None 666 with
+| None y ->
+  let tmp = Some 111 in
+  let f = λ n : z64 . n + 1 in
+  match Some y with
+  | Some x -> f x
+  | None y -> y
+  end
 | Some x -> x
 end

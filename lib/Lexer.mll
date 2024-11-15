@@ -17,29 +17,31 @@ rule lex = parse
   | whitespace { lex lexbuf }
   | "(*" { comment lexbuf }
 
-  | "+"     { Plus        }
-  | "-"     { Minus       }
-  | "*"     { Star        }
-  | "."     { Period      }
-  | ":"     { Colon       }
-  | "("     { OpenParen   }
-  | ")"     { ShutParen   }
-  | "\\"    { Lambda      }
-  | "λ"     { Lambda      }
-  | "->"    { Arrow       }
-  | "→"     { Arrow       }
-  | "="     { Equal       }
-  | "|"     { Bar         }
-  | "let"   { Let         }
-  | "in"    { In          }
-  | "type"  { Type        }
-  | "of"    { Of          }
-  | "match" { Match       }
-  | "with"  { With        }
-  | "end"   { End         }
-  | "recursive" { Recursive }
+  | "+"         { Plus        }
+  | "-"         { Minus       }
+  | "*"         { Star        }
+  | "."         { Period      }
+  | ":"         { Colon       }
+  | "("         { OpenParen   }
+  | ")"         { ShutParen   }
+  | "\\"        { Lambda      }
+  | "λ"         { Lambda      }
+  | "->"        { Arrow       }
+  | "→"         { Arrow       }
+  | "="         { Equal       }
+  | "|"         { Bar         }
+  | "let"       { Let         }
+  | "in"        { In          }
+  | "type"      { Type        }
+  | "of"        { Of          }
+  | "match"     { Match       }
+  | "with"      { With        }
+  | "end"       { End         }
+  | "recursive" { Recursive   }
+  | "true"      { BooleanLiteral true   }
+  | "false"     { BooleanLiteral false  }
 
-  | digits as d { Literal (Int.of_string d) }
+  | digits as d { IntegerLiteral (Int.of_string d) }
   | id as id { Identifier id }
   | constructor as id { Constructor id }
   | eof { EOF }

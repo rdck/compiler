@@ -36,7 +36,9 @@ let rec represent_expression =
   function
   | Assignable a -> represent_assignable a
   | Address a -> sprintf "&%s" (represent_assignable a)
-  | Lit i -> sprintf "%dll" i
+  | Lit (IntegerLiteral i) -> sprintf "%dll" i
+  | Lit (BooleanLiteral true) -> "true"
+  | Lit (BooleanLiteral false) -> "false"
   | Call (id, args) -> sprintf "%s(%s)" id (concat_map args ~f:represent ~sep:", ")
   | Bin (op, lhs, rhs) ->
     sprintf "%s %s %s" (represent lhs) (represent_binop op) (represent rhs)
@@ -77,7 +79,13 @@ let represent_procedure { name; value = proc } =
     (concat_map proc.body ~f:represent_statement ~sep:"\n")
 
 
-let prelude_items = [ "#include <stdint.h>"; "#include <stdlib.h>"; "#include <stdio.h>" ]
+let prelude_items =
+  [ "#include <stdint.h>"
+  ; "#include <stdbool.h>"
+  ; "#include <stdlib.h>"
+  ; "#include <stdio.h>"
+  ]
+
 
 let represent_program { types; procedures; main } =
   let type_declaration name = function

@@ -29,6 +29,8 @@ let name_closure = "fp"
 let name_union = "u"
 let name_free = "free"
 let name_match_closure = "matcher"
+let ilit i = T.Lit (IntegerLiteral i)
+let blit b = T.Lit (BooleanLiteral b)
 
 let register_id = function
   | S.Reg index -> name_register index
@@ -204,7 +206,7 @@ let compile_program source =
   in
   let compile_instructions instructions register_type =
     let compile_expression = function
-      | S.Lit i -> T.Lit i
+      | S.Lit l -> T.Lit l
       | S.Bin (op, lhs, rhs) ->
         T.Bin (compile_op op, register_value lhs, register_value rhs)
       | S.Call (f, x) ->
@@ -226,7 +228,7 @@ let compile_program source =
             ; Assign
                 ( register
                 , Assignable (Var (sprintf "malloc(sizeof( *%s ))" register_name)) )
-            ; Assign (Arrow (register, name_counter), Lit 1)
+            ; Assign (Arrow (register, name_counter), ilit 1)
             ; Assign (Arrow (register, name_tag), Assignable (Var (name_lambda tidx fidx)))
             ]
         in
@@ -248,7 +250,7 @@ let compile_program source =
           [ Declare (register_name, atomic_type t)
           ; Assign
               (register, Assignable (Var (sprintf "malloc(sizeof( *%s ))" register_name)))
-          ; Assign (Arrow (register, name_counter), Lit 1)
+          ; Assign (Arrow (register, name_counter), ilit 1)
           ; Assign (Arrow (register, name_tag), Assignable (Var c))
           ; Assign (Dot (Arrow (register, name_union), c), Assignable (register_var p))
           ]
@@ -319,7 +321,7 @@ let compile_program source =
         T.
           [ begin
               match op with
-              | Inc -> Assign (count, Bin (Add, Assignable count, Lit 1))
+              | Inc -> Assign (count, Bin (Add, Assignable count, ilit 1))
               | Dec ->
                 Effect
                   (Call (drop_for_type (register_type r), [ Assignable (register_var r) ]))
@@ -421,8 +423,8 @@ let compile_program source =
       (* function body *)
       let body =
         T.
-          [ Assign (count_assignable, Bin (Sub, Assignable count_assignable, Lit 1))
-          ; If (Bin (LEQ, Assignable count_assignable, Lit 0), Block [ switch; free ])
+          [ Assign (count_assignable, Bin (Sub, Assignable count_assignable, ilit 1))
+          ; If (Bin (LEQ, Assignable count_assignable, ilit 0), Block [ switch; free ])
           ]
       in
       T.
@@ -457,8 +459,8 @@ let compile_program source =
         in
         let switch = T.(Switch (Assignable tag, List.filter_map spec ~f:compile_case)) in
         T.
-          [ Assign (count_assignable, Bin (Sub, Assignable count_assignable, Lit 1))
-          ; If (Bin (LEQ, Assignable count_assignable, Lit 0), Block [ switch; free ])
+          [ Assign (count_assignable, Bin (Sub, Assignable count_assignable, ilit 1))
+          ; If (Bin (LEQ, Assignable count_assignable, ilit 0), Block [ switch; free ])
           ]
       in
       T.

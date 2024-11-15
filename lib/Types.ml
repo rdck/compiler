@@ -25,6 +25,8 @@ let represent_type_specifier spec =
 
 let z64_symbol = "z64"
 let z64 = TypeSymbol z64_symbol
+let b8_symbol = "b8"
+let b8 = TypeSymbol b8_symbol
 
 module Ty = struct
   module T = struct

@@ -1,6 +1,8 @@
 open Core
 open Symbol
 
+type literal = Syntax.literal [@@deriving equal, show]
+
 type ty =
   | TypeSymbol of identifier
   | Pointer of ty
@@ -33,7 +35,7 @@ type assignable =
 type expression =
   | Assignable of assignable
   | Address of assignable
-  | Lit of int
+  | Lit of literal
   | Call of identifier * expression list
   | Bin of binop * expression * expression
 [@@deriving equal, show]

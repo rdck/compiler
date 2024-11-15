@@ -3,6 +3,7 @@ open Symbol
 open Types
 
 type binop = Syntax.binop [@@deriving equal, show]
+type literal = Syntax.literal [@@deriving equal, show]
 
 type register =
   | Reg of int
@@ -12,7 +13,7 @@ type register =
 [@@deriving equal, show, compare, sexp]
 
 type expression =
-  | Lit of int
+  | Lit of literal
   | Bin of binop * register * register
   | Closure of symbol * register list
   | Call of register * register

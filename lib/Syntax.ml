@@ -40,7 +40,8 @@ module Expression = struct
 
 
   let node_text = function
-    | Lit i -> sprintf "%d" i
+    | Lit (IntegerLiteral i) -> sprintf "%d" i
+    | Lit (BooleanLiteral b) -> sprintf "%b" b
     | Bin (Add, _, _) -> " + "
     | Bin (Sub, _, _) -> " - "
     | Bin (Mul, _, _) -> " * "

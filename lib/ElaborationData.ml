@@ -11,9 +11,11 @@ type pattern =
   }
 [@@deriving equal, show]
 
+type literal = Syntax.literal [@@deriving equal, show]
+
 (* By this time, patterns must be ordered by constructor. *)
 type 'a node =
-  | Lit of int
+  | Lit of literal
   | Bin of binop * 'a expression * 'a expression
   | Var of identifier
   | App of 'a expression * 'a expression

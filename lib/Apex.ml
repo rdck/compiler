@@ -33,7 +33,8 @@ module Term = struct
 
   let node_text { expr; note = _ } =
     match expr with
-    | Lit i -> sprintf "%d" i
+    | Lit (IntegerLiteral i) -> sprintf "%d" i
+    | Lit (BooleanLiteral b) -> sprintf "%b" b
     | Bin (Add, _, _) -> " + "
     | Bin (Sub, _, _) -> " - "
     | Bin (Mul, _, _) -> " * "

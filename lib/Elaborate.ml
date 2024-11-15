@@ -50,7 +50,8 @@ let elaborate_program program =
     let open S in
     let output x t = return (T.annotate x t) in
     match expression with
-    | Lit i -> output (Lit i) z64
+    | Lit (IntegerLiteral i) -> output (Lit (IntegerLiteral i)) z64
+    | Lit (BooleanLiteral b) -> output (Lit (BooleanLiteral b)) b8
     | Bin (op, lhs, rhs) ->
       let%bind ({ expr = _; note = lht } as lhe) = synth gamma lhs in
       let%bind ({ expr = _; note = rht } as rhe) = synth gamma rhs in

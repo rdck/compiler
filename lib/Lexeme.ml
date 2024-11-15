@@ -4,7 +4,8 @@ include LexemeData
 let represent_lexeme = function
   | Identifier id -> id
   | Constructor id -> id
-  | Literal l -> sprintf "%d" l
+  | IntegerLiteral l -> sprintf "%d" l
+  | BooleanLiteral b -> sprintf "%b" b
   | Plus -> "+"
   | Minus -> "-"
   | Star -> "*"

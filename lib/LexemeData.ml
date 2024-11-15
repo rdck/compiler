@@ -3,7 +3,8 @@ open Core
 type lexeme =
   | Identifier of string
   | Constructor of string
-  | Literal of int
+  | IntegerLiteral of int
+  | BooleanLiteral of bool
   | Plus
   | Minus
   | Star

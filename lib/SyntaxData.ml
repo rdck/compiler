@@ -16,8 +16,13 @@ type pattern =
   }
 [@@deriving equal, show]
 
+type literal =
+  | IntegerLiteral of int
+  | BooleanLiteral of bool
+[@@deriving equal, show]
+
 type expression =
-  | Lit of int
+  | Lit of literal
   | Bin of binop * expression * expression
   | Var of identifier
   | App of expression * expression

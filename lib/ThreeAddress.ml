@@ -17,7 +17,8 @@ let represent_register = function
 
 
 let represent_expression = function
-  | Lit i -> sprintf "%d" i
+  | Lit (IntegerLiteral i) -> sprintf "%d" i
+  | Lit (BooleanLiteral b) -> sprintf "%b" b
   | Bin (op, lhs, rhs) ->
     sprintf
       "%s %s %s"

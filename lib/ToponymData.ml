@@ -3,6 +3,7 @@ open Symbol
 open Types
 
 type binop = Syntax.binop [@@deriving equal, show]
+type literal = Syntax.literal [@@deriving equal, show]
 type pattern = Elaboration.pattern [@@deriving equal, show]
 
 type namespace =
@@ -12,7 +13,7 @@ type namespace =
 [@@deriving equal, show]
 
 type 'a node =
-  | Lit of int
+  | Lit of literal
   | Bin of binop * 'a expression * 'a expression
   | Var of namespace * identifier
   | Cls of symbol * 'a expression list

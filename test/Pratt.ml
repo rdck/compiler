@@ -30,6 +30,9 @@ let test_case_for_expr input expect =
   T.test_case input `Quick (fun () -> check_expr input input expect)
 
 
+let ilit i = Syntax.Lit (IntegerLiteral i)
+let blit b = Syntax.Lit (BooleanLiteral b)
+
 let () =
   T.run
     "pratt parser"
@@ -40,13 +43,14 @@ let () =
           @@ return (Arrow (Arrow (z64, z64), z64))
         ] )
     ; ( "parse"
-      , [ test_case_for_expr "2 + 3" @@ return Syntax.(Bin (Add, Lit 2, Lit 3))
+      , [ test_case_for_expr "2 + 3" @@ return Syntax.(Bin (Add, ilit 2, ilit 3))
         ; test_case_for_expr "2 + 3 * 4"
-          @@ return Syntax.(Bin (Add, Lit 2, Bin (Mul, Lit 3, Lit 4)))
+          @@ return Syntax.(Bin (Add, ilit 2, Bin (Mul, ilit 3, ilit 4)))
         ; test_case_for_expr "2 + 3 + 4"
-          @@ return Syntax.(Bin (Add, Bin (Add, Lit 2, Lit 3), Lit 4))
+          @@ return Syntax.(Bin (Add, Bin (Add, ilit 2, ilit 3), ilit 4))
         ; test_case_for_expr "2 + 3 * 4 + 5"
-          @@ return Syntax.(Bin (Add, Bin (Add, Lit 2, Bin (Mul, Lit 3, Lit 4)), Lit 5))
+          @@ return
+               Syntax.(Bin (Add, Bin (Add, ilit 2, Bin (Mul, ilit 3, ilit 4)), ilit 5))
         ; test_case_for_expr "λ x : z64 . x"
           @@ return Syntax.(Abs ({ name = "x"; value = z64 }, Var "x"))
         ; test_case_for_expr "λ x : z64 . x + x"
