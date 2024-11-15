@@ -40,6 +40,9 @@ rule lex = parse
   | "recursive" { Recursive   }
   | "true"      { BooleanLiteral true   }
   | "false"     { BooleanLiteral false  }
+  | "if"        { If          }
+  | "then"      { Then        }
+  | "else"      { Else        }
 
   | digits as d { IntegerLiteral (Int.of_string d) }
   | id as id { Identifier id }

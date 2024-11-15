@@ -129,6 +129,24 @@ let elaborate_program program =
       let gamma = binding id et :: gamma in
       let%bind ({ expr = _; note = bt } as b) = synth gamma b in
       output (Let (id, e, b)) bt
+    | Conditional (antecedent, consequent, alternative) ->
+      let%bind ({ expr = _; note = antecedent_type } as antecedent) =
+        synth gamma antecedent
+      in
+      let%bind ({ expr = _; note = consequent_type } as consequent) =
+        synth gamma consequent
+      in
+      let%bind ({ expr = _; note = alternative_type } as alternative) =
+        synth gamma alternative
+      in
+      (* check if the antecedent is of boolean type *)
+      if [%equal: ty] antecedent_type b8
+      then
+        (* check if the type of the consequent and the alternative match *)
+        if [%equal: ty] consequent_type alternative_type
+        then output (Conditional (antecedent, consequent, alternative)) consequent_type
+        else fail "branches of a conditional must have equal type"
+      else fail "the antecedent of a conditional must be a boolean"
   in
   let%bind body = synth [] program.S.body in
   return T.{ types = program.S.types; body }

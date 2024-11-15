@@ -31,6 +31,11 @@ let rec track_expression gamma argument expr =
     | S.Let (id, e, b) ->
       let extended = id :: gamma in
       T.Let (id, track gamma argument e, track extended argument b)
+    | S.Conditional (antecedent, consequent, alternative) ->
+      T.Conditional
+        ( track gamma argument antecedent
+        , track gamma argument consequent
+        , track gamma argument alternative )
   in
   annotate inner
 

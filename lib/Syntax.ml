@@ -37,6 +37,8 @@ module Expression = struct
     (* TODO: figure out how to show patterns *)
     | Mat (e, es) -> Nary (e :: List.map es ~f:snd)
     | Let _ -> Nullary (* TODO *)
+    | Conditional (antecedent, consequent, alternative) ->
+      Nary [ antecedent; consequent; alternative ]
 
 
   let node_text = function
@@ -52,6 +54,7 @@ module Expression = struct
     | Con (id, _) -> sprintf "%s " id
     | Mat _ -> "match" (* incomplete *)
     | Let _ -> "let" (* incomplet *)
+    | Conditional _ -> "if then else" (* incomplete *)
 end
 
 module Printer = PrettyPrinter.Make (Expression)

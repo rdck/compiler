@@ -32,6 +32,8 @@ let free expr =
       let free_in_definition = multi e in
       let free_in_body = List.filter (multi b) ~f:(filter id) in
       free_in_definition @ free_in_body
+    | S.Conditional (antecedent, consequent, alternative) ->
+      multi antecedent @ multi consequent @ multi alternative
   in
   List.stable_dedup (multi expr) ~compare:String.compare
 
@@ -132,6 +134,15 @@ let lift_program S.{ types; body } =
       let { terms = et; body = eb } = lift gamma e in
       let { terms = bt; body = bb } = lift (binding id e.note :: gamma) b in
       output (et @ bt) (T.Let (id, eb, bb))
+    | S.Conditional (antecedent, consequent, alternative) ->
+      let { terms = antecedent_terms; body = antecedent_body } = lift gamma antecedent in
+      let { terms = consequent_terms; body = consequent_body } = lift gamma consequent in
+      let { terms = alternative_terms; body = alternative_body } =
+        lift gamma alternative
+      in
+      output
+        (antecedent_terms @ consequent_terms @ alternative_terms)
+        T.(Conditional (antecedent_body, consequent_body, alternative_body))
   in
   let { terms; body } = lift [] body in
   T.{ types; terms; body }

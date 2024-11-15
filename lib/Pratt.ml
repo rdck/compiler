@@ -84,6 +84,13 @@ let rec pratt p tokens =
       let%bind rest = consume In rest in
       let%bind { syntax = body; rest } = pratt 0 rest in
       return_parse (Let (id, d, body)) rest
+    | If :: rest ->
+      let%bind { syntax = antecedent; rest } = pratt 0 rest in
+      let%bind rest = consume Then rest in
+      let%bind { syntax = consequent; rest } = pratt 0 rest in
+      let%bind rest = consume Else rest in
+      let%bind { syntax = alternative; rest } = pratt 0 rest in
+      return_parse (Conditional (antecedent, consequent, alternative)) rest
     | _ -> fail "expected atom"
   in
   match tokens with

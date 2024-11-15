@@ -31,6 +31,8 @@ module Term = struct
     | Con (_, p) -> Unary (5, p)
     | Mat _ -> Nullary (* TODO *)
     | Let (_, e, b) -> Binary (0, Right, e, b)
+    | Conditional (antecedent, consequent, alternative) ->
+      Nary [ antecedent; consequent; alternative ]
 
 
   let node_text { expr; note = _ } =
@@ -47,6 +49,7 @@ module Term = struct
     | Con (c, _) -> sprintf "%s " c
     | Mat _ -> "match" (* incomplete *)
     | Let (id, _, _) -> sprintf " as %s in " id
+    | Conditional _ -> "if then else" (* incomplete *)
 end
 
 module Printer = PrettyPrinter.Make (Term)

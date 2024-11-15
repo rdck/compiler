@@ -30,6 +30,7 @@ type expression =
   | Con of identifier * expression
   | Mat of expression * (pattern * expression) list
   | Let of identifier * expression * expression
+  | Conditional of expression * expression * expression
 [@@deriving equal, show]
 
 type program =

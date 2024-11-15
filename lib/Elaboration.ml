@@ -31,6 +31,8 @@ module Term = struct
     (* TODO: figure out how to show patterns *)
     | Mat (e, es) -> Nary (e :: List.map es ~f:snd)
     | Let (_, e, b) -> Binary (0, Right, e, b)
+    | Conditional (antecedent, consequent, alternative) ->
+      Nary [ antecedent; consequent; alternative ]
 
 
   let node_text { expr; note = _ } =
@@ -47,6 +49,7 @@ module Term = struct
     | Con (id, _) -> sprintf "%s " id
     | Mat _ -> "match" (* incomplete *)
     | Let _ -> "let" (* incomplete *)
+    | Conditional _ -> "if then else" (* incomplete *)
 end
 
 module Printer = PrettyPrinter.Make (Term)

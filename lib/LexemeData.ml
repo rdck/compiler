@@ -24,5 +24,8 @@ type lexeme =
   | Match
   | With
   | End
+  | If
+  | Then
+  | Else
   | EOF
 [@@deriving equal, show]
