@@ -55,16 +55,7 @@ let compile_program S.{ types; terms; body } =
         let store = T.(Store (sym, note, Con (c, parameter_register))) in
         { code = parameter_code @ [ store ]; reg = sym }
       | S.Mat (control, environment, cases) ->
-        let { code = control_code; reg = control_register } = compile control in
-        let environment = List.map environment ~f:compile in
-        (* We ignore generated code for these, because it should never exist. *)
-        let environment_registers = List.map environment ~f:(fun c -> c.reg) in
-        let sym = gensym () in
-        let match_expression =
-          T.(Mat (control_register, control.note, environment_registers, cases))
-        in
-        let mat = T.(Store (sym, note, match_expression)) in
-        { code = control_code @ [ mat ]; reg = sym }
+        failwith "TODO"
       | S.Let (id, e, b) ->
         let { code = ec; reg = er } = compile e in
         let { code = bc; reg = br } = compile b in

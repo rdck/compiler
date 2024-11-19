@@ -4,6 +4,7 @@ open Types
 
 type binop = Syntax.binop [@@deriving equal, show]
 type literal = Syntax.literal [@@deriving equal, show]
+type label = int [@@deriving equal, show]
 
 type register =
   | Reg of int
@@ -18,7 +19,6 @@ type expression =
   | Closure of symbol * register list
   | Call of register * register
   | Con of identifier * register
-  | Mat of register * ty * register list * symbol list
   | Read of register
 [@@deriving equal, show]
 
@@ -30,6 +30,9 @@ type count_operation =
 type instruction =
   | Store of register * ty * expression
   | Return of register
+  | Label of label
+  | Branch of register * label list
+  | Merge of label
   | Count of count_operation * register
 [@@deriving equal, show]
 

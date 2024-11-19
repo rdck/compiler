@@ -30,13 +30,6 @@ let represent_expression = function
     sprintf "close f%d {%s}" f s
   | Call (f, x) -> sprintf "call %s %s" (represent_register f) (represent_register x)
   | Con (c, p) -> sprintf "%s %s" c (represent_register p)
-  | Mat (control, _, environment, cases) ->
-    let represent_symbol index = sprintf "f%d" index in
-    let cases = String.concat ~sep:" | " (List.map cases ~f:represent_symbol) in
-    let environment =
-      String.concat ~sep:" " (List.map environment ~f:represent_register)
-    in
-    sprintf "match %s under [%s] with %s" (represent_register control) environment cases
   | Read r -> represent_register r
 
 
