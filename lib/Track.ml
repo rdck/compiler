@@ -19,15 +19,20 @@ let rec track_expression gamma argument expr =
         | None -> if String.equal id argument then T.Arg else T.Env
       in
       T.Var (namespace, id)
-    | S.Cls (symbol, parameters) ->
-      let parameters = List.map parameters ~f:(track gamma argument) in
-      T.Cls (symbol, parameters)
+    | S.Cls { code; data } ->
+      let data = List.map data ~f:(track gamma argument) in
+      T.Cls { code; data }
     | S.App (f, x) -> T.App (track gamma argument f, track gamma argument x)
     | S.Con (c, p) -> T.Con (c, track gamma argument p)
-    | S.Mat (control, environment, cases) ->
+    | S.Mat (control, cases) ->
       let control = track gamma argument control in
-      let environment = List.map environment ~f:(track gamma argument) in
-      T.Mat (control, environment, cases)
+      let cases =
+        let track_case S.{ code; data } =
+          T.{ code; data = List.map data ~f:(track gamma argument) }
+        in
+        List.map cases ~f:track_case
+      in
+      T.Mat (control, cases)
     | S.Let (id, e, b) ->
       let extended = id :: gamma in
       T.Let (id, track gamma argument e, track extended argument b)

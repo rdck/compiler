@@ -70,29 +70,11 @@ let lift_program S.{ types; body } =
       let { terms = lhs_terms; body = lhs_body } = lift gamma lhs in
       let { terms = rhs_terms; body = rhs_body } = lift gamma rhs in
       output (lhs_terms @ rhs_terms) (App (lhs_body, rhs_body))
-    | S.Abs (id, body) ->
-      let fvs = free node in
-      let symbol = gensym "main" in
-      let { terms = body_terms; body = body_body } =
-        let argument = binding id (ty_domain_exn note) in
-        lift (argument :: gamma) body
-      in
-      { terms =
-          (let definition =
-             T.
-               { env = List.map fvs ~f:(fun v -> binding v (lookup_exn gamma v))
-               ; arg = binding id (ty_domain_exn note)
-               ; body = body_body
-               }
-           in
-           binding symbol definition :: body_terms)
-      ; body = annotate (Cls (symbol, List.map fvs ~f:var))
-      }
+    | S.Abs (id, body) -> failwith "TODO"
     | S.Con (c, p) ->
       let { terms; body } = lift gamma p in
       output terms (Con (c, body))
-    | S.Mat (control, cases) ->
-      failwith "TODO"
+    | S.Mat (control, cases) -> failwith "TODO"
     | S.Let (id, e, b) ->
       let { terms = et; body = eb } = lift gamma e in
       let { terms = bt; body = bb } = lift (binding id e.note :: gamma) b in

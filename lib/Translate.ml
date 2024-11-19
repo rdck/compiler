@@ -36,14 +36,7 @@ let compile_program S.{ types; terms; body } =
         | Env -> { code = []; reg = T.Env id }
         | Loc -> { code = []; reg = T.Loc id }
       end
-      | S.Cls (idx, args) ->
-        let compiled_args = List.map args ~f:compile in
-        let codes = List.map compiled_args ~f:project_code in
-        let regs = List.map compiled_args ~f:project_reg in
-        let sym = gensym () in
-        { code = List.concat codes @ [ T.Store (sym, note, T.Closure (idx, regs)) ]
-        ; reg = sym
-        }
+      | S.Cls { code; data } -> failwith "TODO"
       | S.App (f, x) ->
         let { code = fc; reg = fr } = compile f in
         let { code = xc; reg = xr } = compile x in
@@ -54,8 +47,7 @@ let compile_program S.{ types; terms; body } =
         let sym = gensym () in
         let store = T.(Store (sym, note, Con (c, parameter_register))) in
         { code = parameter_code @ [ store ]; reg = sym }
-      | S.Mat (control, environment, cases) ->
-        failwith "TODO"
+      | S.Mat (control, cases) -> failwith "TODO"
       | S.Let (id, e, b) ->
         let { code = ec; reg = er } = compile e in
         let { code = bc; reg = br } = compile b in

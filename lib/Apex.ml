@@ -24,7 +24,7 @@ module Term = struct
        | Mul -> Binary (3, Left, lhs, rhs)
        | Exp -> Binary (4, Right, lhs, rhs))
     | Var _ -> Nullary
-    | Cls (_, args) -> Nary args
+    | Cls { code = _; data } -> Nary data
     | App (f, x) -> Binary (5, Left, f, x)
     | Con (_, p) -> Unary (5, p)
     | Mat _ -> Nullary (* TODO *)
@@ -43,7 +43,7 @@ module Term = struct
     | Bin (Exp, _, _) -> " ^ "
     | Var id -> id
     | App _ -> " "
-    | Cls (sym, _) -> sprintf "f%s" (represent_symbol sym)
+    | Cls { code; data = _ } -> sprintf "f%s" (represent_symbol code)
     | Con (c, _) -> sprintf "%s " c
     | Mat _ -> "match" (* incomplete *)
     | Let _ -> "let" (* incomplete *)
