@@ -28,7 +28,7 @@ module Term = struct
     | Cls (_, args) -> Nary args
     | App (f, x) -> Binary (5, Left, f, x)
     | Con (_, p) -> Unary (5, p)
-    | Mat _ -> Nullary (* TODO *)
+    | Mat (control, _) -> Unary (0, control)
     | Let (_, e, b) -> Binary (0, Right, e, b)
     | Conditional (antecedent, consequent, alternative) ->
       Nary [ antecedent; consequent; alternative ]
@@ -46,9 +46,13 @@ module Term = struct
     | App _ -> " "
     | Cls (sym, _) -> sprintf "f%s" (represent_symbol sym)
     | Con (c, _) -> sprintf "%s " c
-    | Mat _ -> "match" (* incomplete *)
-    | Let _ -> "let" (* incomplete *)
-    | Conditional _ -> "if then else"
+    | Mat (_, cases) ->
+      let case_text { code; data } = sprintf "f%d" code in
+      sprintf
+        "match [%s] against "
+        (String.concat ~sep:" | " (List.map cases ~f:case_text))
+    | Let (id, _, _) -> sprintf " as %s in " id
+    | Conditional _ -> "conditional"
 end
 
 module Printer = PrettyPrinter.Make (Term)

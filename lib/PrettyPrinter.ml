@@ -51,7 +51,7 @@ module Make (E : EXPRESSION) = struct
         wrap s (p' <= p)
       | Nary xs ->
         let ss = List.map xs ~f:(fun e -> show 0 e) in
-        let ss' = String.concat ~sep:"," ss in
+        let ss' = String.concat ~sep:", " ss in
         sprintf "%s [%s]" atom ss'
     in
     show 0
