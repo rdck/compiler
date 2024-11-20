@@ -8,9 +8,10 @@ open Types
 module S = Elaboration (* source *)
 module T = Apex (* target *)
 
+let filter id name = not (String.equal id name)
+
 (* find the free variables in an expression *)
 let free expr =
-  let filter id name = not (String.equal id name) in
   (* compute the free variables without removing duplicates *)
   let rec multi S.{ expr; note = _ } =
     match expr with
@@ -21,12 +22,14 @@ let free expr =
     | S.Abs (id, body) -> List.filter (multi body) ~f:(filter id)
     | S.Con (_, p) -> multi p
     | S.Mat (control, cases) ->
-      (* find the free variables in a case *)
-      let free_in_case (pattern, body) =
-        List.filter (multi body) ~f:(filter pattern.S.parameter)
+      (* union of free variables in each case *)
+      let free_in_cases =
+        (* find the free variables in a case *)
+        let free_in_case (pattern, body) =
+          List.filter (multi body) ~f:(filter pattern.S.parameter)
+        in
+        List.map cases ~f:free_in_case
       in
-      (* map the above over all cases *)
-      let free_in_cases = List.map cases ~f:free_in_case in
       List.concat (multi control :: free_in_cases)
     | S.Let (id, e, b) ->
       let free_in_definition = multi e in
@@ -40,10 +43,13 @@ let free expr =
 
 (* The result of lifting a term is a set of lifted definitions together with the modified
    term. *)
-type lift =
+type 'a lift =
   { terms : (symbol, T.definition) bindings
-  ; body : T.term
+  ; body : 'a
   }
+
+let lift_terms lift = lift.terms
+let lift_body lift = lift.body
 
 let lift_program S.{ types; body } =
   (* initialize local symbol generator *)
@@ -70,11 +76,61 @@ let lift_program S.{ types; body } =
       let { terms = lhs_terms; body = lhs_body } = lift gamma lhs in
       let { terms = rhs_terms; body = rhs_body } = lift gamma rhs in
       output (lhs_terms @ rhs_terms) (App (lhs_body, rhs_body))
-    | S.Abs (id, body) -> failwith "TODO"
+    | S.Abs (id, body) ->
+      let fvs = free node in
+      let symbol = gensym "main" in
+      let { terms = body_terms; body = body_body } =
+        let argument = binding id (ty_domain_exn note) in
+        lift (argument :: gamma) body
+      in
+      { terms =
+          begin
+            let definition =
+              T.
+                { env = List.map fvs ~f:(fun v -> binding v (lookup_exn gamma v))
+                ; arg = binding id (ty_domain_exn note)
+                ; body = body_body
+                }
+            in
+            binding symbol definition :: body_terms
+          end
+      ; body = annotate (Cls { code = symbol; data = List.map fvs ~f:var })
+      }
     | S.Con (c, p) ->
       let { terms; body } = lift gamma p in
       output terms (Con (c, body))
-    | S.Mat (control, cases) -> failwith "TODO"
+    | S.Mat (control, cases) ->
+      (* lift the control term *)
+      let { terms = control_terms; body = control_body } = lift gamma control in
+      (* lift each case *)
+      let cases =
+        let lift_case (pattern, body) =
+          (* lift the body of the case *)
+          let { terms = case_terms; body = case_body } =
+            let argument = binding pattern.S.parameter pattern.S.parameter_type in
+            lift (argument :: gamma) body
+          in
+          (* generate a symbol *)
+          let symbol = gensym "match" in
+          (* compute the free variables in the case body *)
+          let free_variables = List.filter (free body) ~f:(filter pattern.S.parameter) in
+          (* build the lifted function definition *)
+          let definition =
+            T.
+              { env = List.map free_variables ~f:(fun v -> binding v (lookup_exn gamma v))
+              ; arg = binding pattern.S.parameter pattern.S.parameter_type
+              ; body = case_body
+              }
+          in
+          { terms = binding symbol definition :: case_terms
+          ; body = T.closure symbol (List.map free_variables ~f:var)
+          }
+        in
+        List.map cases ~f:lift_case
+      in
+      let cases_terms = List.concat_map cases ~f:lift_terms in
+      let cases_bodies = List.map cases ~f:lift_body in
+      output (control_terms @ cases_terms) (Mat (control_body, cases_bodies))
     | S.Let (id, e, b) ->
       let { terms = et; body = eb } = lift gamma e in
       let { terms = bt; body = bb } = lift (binding id e.note :: gamma) b in
