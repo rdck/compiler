@@ -14,6 +14,8 @@ module Register : sig
   include Comparable.S with type t := t
 end
 
+(* curried closure constructor *)
+val closure : symbol -> register list -> closure
 val definition_env : definition -> (identifier, ty) bindings
 val definition_arg : definition -> (identifier, ty) binding
 val definition_body : definition -> instruction list

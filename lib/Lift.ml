@@ -15,7 +15,6 @@ type 'a lift =
 
 let lift_terms lift = lift.terms
 let lift_body lift = lift.body
-
 let filter id name = not (String.equal id name)
 
 (* find the free variables in an expression *)

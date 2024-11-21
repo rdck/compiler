@@ -15,11 +15,16 @@ type register =
 type expression =
   | Lit of literal
   | Bin of binop * register * register
-  | Closure of symbol * register list
+  | Closure of closure
   | Call of register * register
   | Con of identifier * register
-  | Mat of register * ty * register list * symbol list
+  | Mat of register * closure list
   | Read of register
+
+and closure =
+  { code : symbol
+  ; data : register list
+  }
 [@@deriving equal, show]
 
 type count_operation =

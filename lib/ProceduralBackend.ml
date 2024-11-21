@@ -218,7 +218,7 @@ let compile_program source =
       | S.Read r -> register_value r
     in
     let compile_instruction = function
-      | S.Store (dest, t, Closure (fidx, args)) ->
+      | S.Store (dest, t, Closure { code = fidx; data = args }) ->
         let register_name = register_id dest in
         let register = register_var dest in
         let tidx = lookup_type_index t in
@@ -254,61 +254,7 @@ let compile_program source =
           ; Assign (Arrow (register, name_tag), Assignable (Var c))
           ; Assign (Dot (Arrow (register, name_union), c), Assignable (register_var p))
           ]
-      | S.Store (dest, t, Mat (control, control_type, environment, cases)) ->
-        let register_name = register_id dest in
-        let register = register_var dest in
-        let type_symbol = ty_symbol_exn control_type in
-        let spec = lookup_type_exn type_symbol in
-        let zipped = List.zip_exn spec cases in
-        let gen_case ({ name; parameter }, symbol) =
-          let closure_type = Types.Arrow (parameter, t) in
-          let closure_type_index = lookup_type_index closure_type in
-          let closure_var = T.Var name_match_closure in
-          let function_tag = name_lambda closure_type_index symbol in
-          let closure_setup =
-            T.
-              [ Declare (name_match_closure, atomic_type closure_type)
-              ; Assign
-                  ( closure_var
-                  , Assignable (Var (sprintf "malloc(sizeof( *%s ))" name_match_closure))
-                  )
-              ; Assign (Arrow (closure_var, name_tag), Assignable (Var function_tag))
-              ]
-          in
-          let arg_assignment =
-            let assign_arg name value =
-              let arg_dest =
-                T.(
-                  Dot (Dot (Arrow (closure_var, name_union), name_function symbol), name))
-              in
-              T.(Assign (arg_dest, register_value value))
-            in
-            let environment_names = get_environment_names symbol in
-            List.map2_exn environment_names environment ~f:assign_arg
-          in
-          let parameter =
-            T.(Assignable (Dot (Arrow (register_var control, name_union), name)))
-          in
-          T.
-            { tag = Assignable (Var name)
-            ; body =
-                closure_setup
-                @ arg_assignment
-                @ [ Assign
-                      ( register
-                      , Call
-                          ( name_eval closure_type_index
-                          , [ Assignable closure_var; parameter ] ) )
-                  ]
-                @ [ Effect (Call (name_free, [ Assignable closure_var ])) ]
-            }
-        in
-        T.
-          [ Declare (register_name, atomic_type t)
-          ; Switch
-              ( Assignable (Arrow (register_var control, name_tag))
-              , List.map zipped ~f:gen_case )
-          ]
+      | S.Store (dest, t, Mat (control, cases)) -> failwith "TODO"
       | S.Store (dest, t, v) ->
         let register_name = register_id dest in
         let register = register_var dest in

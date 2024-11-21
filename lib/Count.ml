@@ -48,8 +48,8 @@ let count_term environment arg instructions =
   (* issue increment for closure arguments *)
   let body =
     List.concat_map body ~f:(function
-      | Store (_, _, Closure (_, args)) as instruction ->
-        let args = List.filter args ~f:(fun r -> is_heap_type (lookup_register r)) in
+      | Store (_, _, Closure { code = _; data }) as instruction ->
+        let args = List.filter data ~f:(fun r -> is_heap_type (lookup_register r)) in
         instruction :: List.map args ~f:inc
       | instruction -> [ instruction ])
   in

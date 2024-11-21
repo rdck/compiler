@@ -4,9 +4,9 @@ open Symbol
 module S = Toponym (* source *)
 module T = ThreeAddress (* target *)
 
-type compilation =
+type 'a compilation =
   { code : T.instruction list
-  ; reg : T.register
+  ; reg : 'a
   }
 
 let project_code x = x.code
@@ -41,7 +41,8 @@ let compile_program S.{ types; terms; body } =
         let codes = List.map compiled_args ~f:project_code in
         let regs = List.map compiled_args ~f:project_reg in
         let sym = gensym () in
-        { code = List.concat codes @ [ T.Store (sym, note, T.Closure (idx, regs)) ]
+        { code =
+            List.concat codes @ [ T.Store (sym, note, T.Closure (T.closure idx regs)) ]
         ; reg = sym
         }
       | S.App (f, x) ->
@@ -55,7 +56,21 @@ let compile_program S.{ types; terms; body } =
         let store = T.(Store (sym, note, Con (c, parameter_register))) in
         { code = parameter_code @ [ store ]; reg = sym }
       | S.Mat (control, cases) ->
-        failwith "TODO"
+        let symbol = gensym () in
+        let { code = control_code; reg = control_register } = compile control in
+        let cases =
+          let compile_case S.{ code; data } =
+            let compiled_data = List.map data ~f:compile in
+            { code = List.concat (List.map compiled_data ~f:project_code)
+            ; reg = T.closure code (List.map compiled_data ~f:project_reg)
+            }
+          in
+          List.map cases ~f:compile_case
+        in
+        let cases_code = List.concat (List.map cases ~f:project_code) in
+        let closures = List.map cases ~f:project_reg in
+        let store = T.[ Store (symbol, note, Mat (control_register, closures)) ] in
+        { code = control_code @ cases_code @ store; reg = symbol }
       | S.Let (id, e, b) ->
         let { code = ec; reg = er } = compile e in
         let { code = bc; reg = br } = compile b in

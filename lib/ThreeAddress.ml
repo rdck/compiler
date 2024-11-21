@@ -16,6 +16,10 @@ let represent_register = function
   | Loc id -> id
 
 
+let represent_closure { code; data } =
+  sprintf "f%d [%s]" code (String.concat ~sep:", " (List.map data ~f:represent_register))
+
+
 let represent_expression = function
   | Lit (IntegerLiteral i) -> sprintf "%d" i
   | Lit (BooleanLiteral b) -> sprintf "%b" b
@@ -25,18 +29,14 @@ let represent_expression = function
       (represent_binop op)
       (represent_register lhs)
       (represent_register rhs)
-  | Closure (f, args) ->
-    let s = String.concat ~sep:" " (List.map args ~f:represent_register) in
-    sprintf "close f%d {%s}" f s
+  | Closure { code; data } ->
+    let s = String.concat ~sep:" " (List.map data ~f:represent_register) in
+    sprintf "close f%d {%s}" code s
   | Call (f, x) -> sprintf "call %s %s" (represent_register f) (represent_register x)
   | Con (c, p) -> sprintf "%s %s" c (represent_register p)
-  | Mat (control, _, environment, cases) ->
-    let represent_symbol index = sprintf "f%d" index in
-    let cases = String.concat ~sep:" | " (List.map cases ~f:represent_symbol) in
-    let environment =
-      String.concat ~sep:" " (List.map environment ~f:represent_register)
-    in
-    sprintf "match %s under [%s] with %s" (represent_register control) environment cases
+  | Mat (control, cases) ->
+    let cases = String.concat ~sep:" | " (List.map cases ~f:represent_closure) in
+    sprintf "match %s with [%s]" (represent_register control) cases
   | Read r -> represent_register r
 
 
@@ -86,3 +86,5 @@ module Register = struct
   include T
   include Comparable.Make (T)
 end
+
+let closure code data = { code; data }
