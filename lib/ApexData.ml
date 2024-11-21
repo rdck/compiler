@@ -13,9 +13,14 @@ type 'a node =
   | Cls of symbol * 'a expression list
   | App of 'a expression * 'a expression
   | Con of identifier * 'a expression
-  | Mat of 'a expression * 'a expression list * symbol list
+  | Mat of 'a expression * 'a closure list
   | Let of identifier * 'a expression * 'a expression
   | Conditional of 'a expression * 'a expression * 'a expression
+
+and 'a closure =
+  { code : symbol
+  ; data : 'a expression list
+  }
 
 and 'a expression =
   { expr : 'a node
