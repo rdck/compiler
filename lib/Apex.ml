@@ -8,6 +8,7 @@ open Types
 include ApexData
 
 let annotate expr note = { expr; note }
+let closure code data = { code; data }
 
 module Term = struct
   open PrettyPrinter
