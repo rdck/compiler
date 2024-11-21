@@ -24,7 +24,15 @@ let rec track_expression gamma argument expr =
       T.Cls (symbol, parameters)
     | S.App (f, x) -> T.App (track gamma argument f, track gamma argument x)
     | S.Con (c, p) -> T.Con (c, track gamma argument p)
-    | S.Mat (control, cases) -> failwith "TODO"
+    | S.Mat (control, cases) ->
+      let control = track gamma argument control in
+      let cases =
+        let track_case S.{ code; data } =
+          T.{ code; data = List.map data ~f:(track gamma argument) }
+        in
+        List.map cases ~f:track_case
+      in
+      T.Mat (control, cases)
     | S.Let (id, e, b) ->
       let extended = id :: gamma in
       T.Let (id, track gamma argument e, track extended argument b)
